@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import mongoose from 'mongoose';
 
 import { env } from './config/env.js';
 import { connectDb } from './config/db.js';
@@ -43,6 +44,28 @@ app.use(
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 if (env.nodeEnv !== 'test' && !env.isServerless) app.use(morgan('dev'));
+
+/*
+ * Health check.
+ *
+ * Deliberately registered before the database middleware below, and it never
+ * fails: if the API is running but cannot reach MongoDB, the useful answer is
+ * "the API is up, the database is not", not a 500 that looks identical to the
+ * whole deployment being broken.
+ */
+const DB_STATE = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+
+const health = (_req, res) =>
+  res.json({
+    status: 'ok',
+    service: 'biscuit-erp-api',
+    env: env.nodeEnv,
+    database: DB_STATE[mongoose.connection.readyState] ?? 'unknown',
+    time: new Date().toISOString(),
+  });
+
+app.get('/api/health', health);
+app.get('/health', health);
 
 /*
  * Every request opens (or reuses) the database connection before it reaches a
@@ -91,13 +114,6 @@ const loginLimiter = rateLimit({
   },
 });
 
-const health = (_req, res) =>
-  res.json({
-    status: 'ok',
-    service: 'biscuit-erp-api',
-    env: env.nodeEnv,
-    time: new Date().toISOString(),
-  });
 
 /*
  * The router is mounted twice on purpose.
@@ -111,9 +127,6 @@ const health = (_req, res) =>
  */
 app.use('/api/auth/login', loginLimiter);
 app.use('/auth/login', loginLimiter);
-
-app.get('/api/health', health);
-app.get('/health', health);
 
 app.use('/api', routes);
 app.use('/', routes);
