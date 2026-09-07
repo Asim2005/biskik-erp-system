@@ -9,6 +9,7 @@ const quoteSchema = new mongoose.Schema(
     rate: { type: Number, default: 0, min: 0 },
     leadTimeDays: { type: Number, default: 0, min: 0 },
     validUntil: Date,
+    paymentTerms: { type: String, default: '' },
     remarks: { type: String, default: '' },
     receivedAt: { type: Date, default: Date.now },
   },

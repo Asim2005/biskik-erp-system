@@ -8,6 +8,7 @@ import {
   Divider,
   Group,
   Modal,
+  MultiSelect,
   NumberInput,
   Select,
   SimpleGrid,
@@ -38,7 +39,7 @@ import {
 import { api, downloadReport, showError, showSuccess } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import {
-  EmptyState,
+
   ExportMenu,
   Loading,
   Money,
@@ -49,6 +50,8 @@ import {
   StatusBadge,
 } from '../components/ui';
 import { dateTime, money, num } from '../utils/format';
+
+const RFQ_BLANK_LINE = { material: '', qty: 100, targetRate: 0 };
 
 export default function ProcurementPage() {
   const qc = useQueryClient();
@@ -84,7 +87,7 @@ export default function ProcurementPage() {
     suppliers: [],
     deadline: '',
     remarks: '',
-    lines: [{ material: '', qty: 100, targetRate: 0 }],
+    lines: [{ ...RFQ_BLANK_LINE }],
   });
 
   // Quote Form State
@@ -143,8 +146,15 @@ export default function ProcurementPage() {
   const parties = partiesData || [];
   const materials = materialsData || [];
 
+  /*
+   * A party's discriminator is `type`, with exactly CUSTOMER or SUPPLIER in
+   * it. This read `kind` and also allowed for a 'BOTH' that the schema has
+   * never had, so it matched nothing at all: every supplier dropdown on this
+   * screen came up empty and no purchase order or quotation could be entered
+   * through the interface.
+   */
   const suppliers = useMemo(
-    () => parties.filter((p) => ['SUPPLIER', 'BOTH'].includes(p.kind)).map((p) => ({ value: p._id, label: p.name })),
+    () => parties.filter((p) => p.type === 'SUPPLIER').map((p) => ({ value: p._id, label: p.name })),
     [parties]
   );
 
@@ -268,6 +278,37 @@ export default function ProcurementPage() {
     } catch (e) {
       showError(e);
     }
+  };
+
+  /*
+   * Both modals below edit a single line. Patching it this way fixes two
+   * things: changing the material used to rebuild the line from scratch and
+   * silently reset a quantity the user had already typed, and the quantity
+   * and rate handlers wrote straight into the object still held in state
+   * (a spread copies the array, not the lines inside it) instead of
+   * replacing it.
+   */
+  /*
+   * The API records one supplier's price for one material at a time, as a
+   * flat object. This screen had been posting its own form state instead -
+   * material and rate nested inside a lines array - so every quotation was
+   * rejected with "materialCode: Required".
+   */
+  const quotePayload = (form) => {
+    const line = form.lines[0] || {};
+    return {
+      materialCode: line.materialCode,
+      supplier: form.supplier,
+      rate: Number(line.rate) || 0,
+      leadTimeDays: Number(form.deliveryDays) || 0,
+      paymentTerms: form.paymentTerms || '',
+      ...(form.validUntil ? { validUntil: form.validUntil } : {}),
+    };
+  };
+
+  const patchFirstLine = (form, blank, patch) => {
+    const [first = blank, ...rest] = form.lines;
+    return { ...form, lines: [{ ...first, ...patch }, ...rest] };
   };
 
   const openQuoteModal = (rfq) => {
@@ -799,19 +840,24 @@ export default function ProcurementPage() {
             label="Target Material"
             data={materialOptions}
             value={rfqForm.lines[0]?.material}
-            onChange={(v) => {
-              setRfqForm({ ...rfqForm, lines: [{ material: v, qty: 1000, targetRate: 0 }] });
-            }}
+            onChange={(v) =>
+              setRfqForm(patchFirstLine(rfqForm, RFQ_BLANK_LINE, { material: v }))
+            }
             required
+          />
+          <MultiSelect
+            label="Invite suppliers"
+            placeholder="Choose who to ask"
+            data={suppliers}
+            value={rfqForm.suppliers}
+            onChange={(v) => setRfqForm({ ...rfqForm, suppliers: v })}
+            searchable
+            clearable
           />
           <NumberInput
             label="Required Quantity"
             value={rfqForm.lines[0]?.qty}
-            onChange={(v) => {
-              const next = [...rfqForm.lines];
-              next[0].qty = v;
-              setRfqForm({ ...rfqForm, lines: next });
-            }}
+            onChange={(v) => setRfqForm(patchFirstLine(rfqForm, RFQ_BLANK_LINE, { qty: v }))}
           />
           <Group justify="flex-end" mt="md">
             <Button variant="default" onClick={rfqModalHandlers.close}>
@@ -837,11 +883,7 @@ export default function ProcurementPage() {
           <NumberInput
             label="Quoted Rate / Unit"
             value={quoteForm.lines[0]?.rate}
-            onChange={(v) => {
-              const next = [...quoteForm.lines];
-              next[0].rate = v;
-              setQuoteForm({ ...quoteForm, lines: next });
-            }}
+            onChange={(v) => setQuoteForm(patchFirstLine(quoteForm, { rate: 0 }, { rate: v }))}
             prefix="Rs. "
             required
           />
@@ -850,7 +892,7 @@ export default function ProcurementPage() {
               Cancel
             </Button>
             <Button
-              onClick={() => recordQuoteMutation.mutate({ id: selectedRfq._id, payload: quoteForm })}
+              onClick={() => recordQuoteMutation.mutate({ id: selectedRfq._id, payload: quotePayload(quoteForm) })}
               loading={recordQuoteMutation.isPending}
             >
               Submit Quotation

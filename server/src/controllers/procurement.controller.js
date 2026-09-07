@@ -584,10 +584,15 @@ export const rfqSchema = z.object({
 });
 
 export const quoteSchema = z.object({
-  materialCode: z.string(),
-  supplier: z.string().min(1),
+  materialCode: z.string().min(1, 'Which material is being quoted?'),
+  supplier: z.string().min(1, 'Select the supplier who quoted'),
   rate: z.coerce.number().min(0),
   leadTimeDays: z.coerce.number().min(0).default(0),
+  // The quotation screen asks for both of these and the model has always had
+  // somewhere to put a validity date; they were simply never accepted here,
+  // so whatever the buyer typed was dropped on the way to the database.
+  validUntil: z.coerce.date().optional(),
+  paymentTerms: z.string().optional().default(''),
   remarks: z.string().optional().default(''),
 });
 
@@ -647,6 +652,8 @@ export const recordQuote = asyncHandler(async (req, res) => {
     supplierName: supplier.name,
     rate: round2(req.body.rate),
     leadTimeDays: req.body.leadTimeDays,
+    validUntil: req.body.validUntil,
+    paymentTerms: req.body.paymentTerms || '',
     remarks: req.body.remarks || '',
     receivedAt: new Date(),
   };
