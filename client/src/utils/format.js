@@ -5,8 +5,20 @@ dayjs.extend(relativeTime);
 
 export const CURRENCY = 'Rs.';
 
+/*
+ * `Number(v) || 0` catches NaN but not Infinity, which is what a division by
+ * zero actually produces - and Infinity survives toFixed and toLocaleString,
+ * so the screen ends up reading "Infinity%" or "Rs. Infinity Cr". Every
+ * formatter below funnels through here so a bad denominator degrades to zero
+ * instead of printing arithmetic at the user.
+ */
+function finite(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function money(value, dp = 2) {
-  const n = Number(value) || 0;
+  const n = finite(value);
   return (
     CURRENCY +
     ' ' +
@@ -16,7 +28,7 @@ export function money(value, dp = 2) {
 
 /** Compact form for dashboard tiles: Rs. 1.76 M */
 export function moneyShort(value) {
-  const n = Number(value) || 0;
+  const n = finite(value);
   const abs = Math.abs(n);
   if (abs >= 1e7) return CURRENCY + ' ' + (n / 1e7).toFixed(2) + ' Cr';
   if (abs >= 1e5) return CURRENCY + ' ' + (n / 1e5).toFixed(2) + ' L';
@@ -25,7 +37,7 @@ export function moneyShort(value) {
 }
 
 export function num(value, dp = 2) {
-  return (Number(value) || 0).toLocaleString('en-PK', {
+  return finite(value).toLocaleString('en-PK', {
     minimumFractionDigits: dp,
     maximumFractionDigits: dp,
   });
@@ -36,15 +48,15 @@ export function qty(value) {
 }
 
 export function int(value) {
-  return Math.round(Number(value) || 0).toLocaleString('en-PK');
+  return Math.round(finite(value)).toLocaleString('en-PK');
 }
 
 export function pct(value, dp = 1) {
-  return (Number(value) || 0).toFixed(dp) + '%';
+  return finite(value).toFixed(dp) + '%';
 }
 
 export function signed(value, dp = 2) {
-  const n = Number(value) || 0;
+  const n = finite(value);
   return (n > 0 ? '+' : '') + num(n, dp);
 }
 
@@ -80,7 +92,7 @@ export function humanise(value) {
 
 /** Adverse variances read red, favourable read teal. */
 export function varianceColor(value) {
-  const n = Number(value) || 0;
+  const n = finite(value);
   if (Math.abs(n) < 0.005) return 'gray';
   return n > 0 ? 'red' : 'teal';
 }

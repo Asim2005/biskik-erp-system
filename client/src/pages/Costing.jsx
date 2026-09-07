@@ -247,7 +247,9 @@ export default function CostingPage() {
                         <VarianceText value={totalActual - totalStandard} dp={4} />
                       </Table.Td>
                       <Table.Td ta="right" fz="xs">
-                        {pct(((totalActual - totalStandard) / totalStandard) * 100, 2)}
+                        {totalStandard
+                          ? pct(((totalActual - totalStandard) / totalStandard) * 100, 2)
+                          : '-'}
                       </Table.Td>
                     </Table.Tr>
                   </Table.Tbody>
