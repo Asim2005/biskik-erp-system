@@ -14,6 +14,7 @@ import { accountLedger, financialSummary, trialBalance } from '../services/accou
 import { taxLedger, taxRegister, taxSummary } from '../services/tax.js';
 import { round2, round4, sum } from '../utils/money.js';
 import { recordAudit } from '../middleware/audit.js';
+import { can } from '../config/roles.js';
 
 const n2 = (v) => (Number(v) || 0).toFixed(2);
 const n3 = (v) => (Number(v) || 0).toFixed(3);
@@ -30,6 +31,7 @@ const signed = (v) => {
 
 const reports = {
   'recipe-cost-sheet': {
+    permission: 'recipe.view',
     title: 'Recipe Cost Sheet',
     subtitle: 'Batch and per-unit standard cost build-up',
     landscape: false,
@@ -93,6 +95,7 @@ const reports = {
   },
 
   'production-variance': {
+    permission: 'costing.view',
     title: 'Standard vs Actual Cost',
     subtitle: 'Estimated cost against actual cost with variance analysis',
     landscape: true,
@@ -197,6 +200,7 @@ const reports = {
   },
 
   'material-consumption': {
+    permission: 'costing.view',
     title: 'Material Consumption Variance',
     subtitle: 'Excess and saved usage across completed production orders',
     landscape: true,
@@ -266,6 +270,7 @@ const reports = {
   },
 
   'inventory-valuation': {
+    permission: 'inventory.view',
     title: 'Inventory Valuation',
     subtitle: 'Raw material, WIP and finished goods at moving average cost',
     landscape: false,
@@ -303,6 +308,7 @@ const reports = {
   },
 
   'stock-movement': {
+    permission: 'inventory.view',
     title: 'Stock Movement Register',
     subtitle: 'Every receipt, issue and adjustment with running balance',
     landscape: true,
@@ -362,6 +368,7 @@ const reports = {
   },
 
   'trial-balance': {
+    permission: 'gl.view',
     title: 'Trial Balance',
     subtitle: 'All posted journal entries by account',
     landscape: false,
@@ -399,6 +406,7 @@ const reports = {
   },
 
   ledger: {
+    permission: 'gl.view',
     title: 'General Ledger',
     subtitle: 'Account detail with running balance',
     landscape: false,
@@ -434,6 +442,7 @@ const reports = {
   },
 
   'sales-tax': {
+    permission: 'tax.view',
     title: 'Sales Tax Summary',
     subtitle: 'Input tax, output tax and net position by period',
     landscape: false,
@@ -476,6 +485,7 @@ const reports = {
   },
 
   'tax-register': {
+    permission: 'tax.view',
     title: 'Sales Tax Register',
     subtitle: 'Invoice-level input and output tax detail',
     landscape: true,
@@ -511,6 +521,7 @@ const reports = {
   },
 
   'production-summary': {
+    permission: 'production.view',
     title: 'Production Summary',
     subtitle: 'Output, yield and unit cost by production order',
     landscape: true,
@@ -573,6 +584,7 @@ const reports = {
   },
 
   'sales-register': {
+    permission: 'sales.view',
     title: 'Sales Register',
     subtitle: 'Posted sales invoices with gross margin',
     landscape: true,
@@ -623,6 +635,7 @@ const reports = {
   },
 
   'purchase-register': {
+    permission: 'purchase.view',
     title: 'Purchase Register',
     subtitle: 'Posted supplier invoices with recoverable input tax',
     landscape: false,
@@ -666,6 +679,7 @@ const reports = {
   },
 
   'profit-loss': {
+    permission: 'gl.view',
     title: 'Profit and Loss',
     subtitle: 'Income and expense by account',
     landscape: false,
@@ -707,20 +721,40 @@ const reports = {
 
 /* ========================================================================== */
 
-export const listReports = asyncHandler(async (_req, res) => {
+/*
+ * The catalogue lists only the reports the caller is actually allowed to run.
+ * Showing a title that answers with 403 when clicked is worse than not
+ * showing it: it advertises data the user cannot have and looks like a bug.
+ */
+export const listReports = asyncHandler(async (req, res) => {
   res.json({
-    data: Object.entries(reports).map(([key, r]) => ({
-      key,
-      title: r.title,
-      subtitle: r.subtitle,
-      needsId: ['recipe-cost-sheet', 'production-variance', 'ledger'].includes(key),
-    })),
+    data: Object.entries(reports)
+      .filter(([, r]) => !r.permission || can(req.user.role, r.permission))
+      .map(([key, r]) => ({
+        key,
+        title: r.title,
+        subtitle: r.subtitle,
+        needsId: ['recipe-cost-sheet', 'production-variance', 'ledger'].includes(key),
+      })),
   });
 });
 
 export const runReport = asyncHandler(async (req, res) => {
   const def = reports[req.params.key];
   if (!def) throw ApiError.notFound('Unknown report: ' + req.params.key);
+
+  /*
+   * A report is just another view of data that lives behind a permission, so
+   * it has to be checked here too. The route itself only asks for
+   * report.view; without this, anyone who may open the Reports screen could
+   * read the general ledger or the tax register through it, which the
+   * equivalent /gl and /tax endpoints would refuse outright.
+   */
+  if (def.permission && !can(req.user.role, def.permission)) {
+    throw ApiError.forbidden(
+      'Role "' + req.user.role + '" is not allowed to ' + def.permission
+    );
+  }
 
   const format = (req.query.format || 'json').toLowerCase();
   const result = await def.load(req);

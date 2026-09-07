@@ -50,7 +50,9 @@ const NAV = [
   { section: 'Manufacturing' },
   { to: '/recipes', label: 'Recipes', icon: IconChefHat, permission: 'recipe.view' },
   { to: '/production', label: 'Production', icon: IconBuildingFactory2, permission: 'production.view' },
-  { to: '/costing', label: 'Costing', icon: IconChartHistogram, permission: 'costing.view' },
+  // Costing is nothing but an analysis of production orders, so a role that
+  // can cost but cannot see production has nothing to look at here.
+  { to: '/costing', label: 'Costing', icon: IconChartHistogram, requires: ['costing.view', 'production.view'] },
 
   { section: 'Supply chain' },
   { to: '/procurement', label: 'Procurement', icon: IconShoppingCart, permission: 'po.view' },
@@ -103,7 +105,7 @@ function useLenisScroll(targetRef) {
 
 export function AppLayout() {
   const [opened, { toggle, close }] = useDisclosure();
-  const { user, logout, can } = useAuth();
+  const { user, logout, can, canAll } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const scrollRef = useRef(null);
@@ -246,7 +248,7 @@ export function AppLayout() {
                 </Text>
               );
             }
-            if (!can(item.permission)) return null;
+            if (item.requires ? !canAll(item.requires) : !can(item.permission)) return null;
             if (item.external) {
               return (
                 <NavLink

@@ -37,7 +37,7 @@ Open **http://localhost:5173** and sign in.
 | `admin@biscuiterp.pk` | `Admin@123` | Administrator | Everything |
 | `finance@biscuiterp.pk` | `Finance@123` | Finance Manager | Approves recipes, posts the GL, manages tax |
 | `production@biscuiterp.pk` | `Production@123` | Production Manager | Creates orders, issues material, completes production |
-| `store@biscuiterp.pk` | `Store@123` | Store Keeper | Receives and adjusts stock, issues to production |
+| `warehouse@biscuiterp.pk` | `Store@123` | Warehouse Officer | Receives and adjusts stock, issues to production |
 | `qa@biscuiterp.pk` | `Qa@123456` | QA / R&D | Writes and submits formulas |
 | `sales@biscuiterp.pk` | `Sales@123` | Sales Officer | Customers and sales invoices |
 | `viewer@biscuiterp.pk` | `Viewer@123` | Viewer | Read only |

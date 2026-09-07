@@ -66,6 +66,9 @@ export default function ProductionPage() {
   const { data: recipes } = useQuery({
     queryKey: ['recipes', 'approved'],
     queryFn: async () => (await api.get('/recipes', { params: { status: 'APPROVED' } })).data.data,
+    // Warehouse roles may watch production without being able to read the
+    // formulas. Asking anyway just earns a 403 and an empty dropdown.
+    enabled: can('recipe.view'),
   });
 
   const approvedOptions = (recipes || []).map((r) => ({

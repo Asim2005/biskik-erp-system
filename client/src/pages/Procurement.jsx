@@ -114,21 +114,27 @@ export default function ProcurementPage() {
   const { data: rfqsData } = useQuery({
     queryKey: ['rfqs'],
     queryFn: async () => (await api.get('/rfqs')).data,
+    enabled: can('rfq.view'),
   });
 
   const { data: grnsData } = useQuery({
     queryKey: ['grns'],
     queryFn: async () => (await api.get('/grns')).data,
+    enabled: can('grn.view'),
   });
 
   const { data: partiesData } = useQuery({
     queryKey: ['parties'],
     queryFn: async () => (await api.get('/parties')).data.data,
+    // Warehouse and production reach this screen to receive goods; suppliers
+    // are a finance/procurement record they cannot read.
+    enabled: can('party.view'),
   });
 
   const { data: materialsData } = useQuery({
     queryKey: ['materials'],
     queryFn: async () => (await api.get('/materials')).data.data,
+    enabled: can('material.view'),
   });
 
   const pos = posData?.data || [];

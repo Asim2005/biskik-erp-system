@@ -28,7 +28,7 @@ const DEMO_ACCOUNTS = [
   ['procurement.manager@biscuiterp.pk', 'Procure@456', 'Procurement Manager', 'Approves POs & Awards RFQs'],
   ['finance@biscuiterp.pk', 'Finance@123', 'Finance Manager', 'Approves recipes, posts the GL'],
   ['production@biscuiterp.pk', 'Production@123', 'Production Manager', 'Runs production orders'],
-  ['store@biscuiterp.pk', 'Store@123', 'Store Keeper', 'Issues and receives stock'],
+  ['warehouse@biscuiterp.pk', 'Store@123', 'Warehouse Officer', 'Issues and receives stock'],
   ['qa@biscuiterp.pk', 'Qa@123456', 'QA / R&D', 'Writes and submits formulas'],
   ['sales@biscuiterp.pk', 'Sales@123', 'Sales Officer', 'Customers and invoices'],
   ['viewer@biscuiterp.pk', 'Viewer@123', 'Viewer', 'Read only'],

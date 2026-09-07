@@ -25,10 +25,12 @@ import {
   IconInfoCircle,
 } from '@tabler/icons-react';
 import { api, downloadReport, showError, showSuccess } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import { Loading, PageHeader, PageTransition, Section } from '../components/ui';
 import { num } from '../utils/format';
 
 export default function ReportsPage() {
+  const { can } = useAuth();
   const [preview, setPreview] = useState(null);
   const [opened, handlers] = useDisclosure(false);
   const [busy, setBusy] = useState('');
@@ -44,16 +46,19 @@ export default function ReportsPage() {
   const { data: recipes } = useQuery({
     queryKey: ['recipes'],
     queryFn: async () => (await api.get('/recipes')).data.data,
+    enabled: can('recipe.view'),
   });
 
   const { data: orders } = useQuery({
     queryKey: ['production'],
     queryFn: async () => (await api.get('/production')).data.data,
+    enabled: can('production.view'),
   });
 
   const { data: accounts } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => (await api.get('/accounts')).data.data,
+    enabled: can('gl.view'),
   });
 
   const paramsFor = (key) => {
@@ -101,6 +106,14 @@ export default function ReportsPage() {
     return undefined;
   };
 
+  /*
+   * The catalogue only contains what this role may actually run, so the
+   * subject pickers follow it rather than being shown unconditionally: an
+   * account picker is noise to someone who cannot open the ledger.
+   */
+  const offers = (key) => (reports || []).some((r) => r.key === key);
+  const needsSubject = ['recipe-cost-sheet', 'production-variance', 'ledger'].filter(offers);
+
   if (isLoading) return <Loading label="Loading reports" />;
 
   return (
@@ -111,12 +124,18 @@ export default function ReportsPage() {
         subtitle="Every report runs off live postings and can be viewed on screen, exported to CSV for Excel, or rendered as a print-ready PDF."
       />
 
-      <Alert color="blue" variant="light" icon={<IconInfoCircle size={18} />} mb="md">
-        Three reports need a subject. Choose one below and they become available.
-      </Alert>
+      {needsSubject.length > 0 && (
+        <Alert color="blue" variant="light" icon={<IconInfoCircle size={18} />} mb="md">
+          {needsSubject.length === 1 ? 'One report needs' : `${needsSubject.length} reports need`} a
+          subject. Choose one below and {needsSubject.length === 1 ? 'it becomes' : 'they become'}{' '}
+          available.
+        </Alert>
+      )}
 
+      {needsSubject.length > 0 && (
       <Card mb="md" p="md">
-        <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
+        <SimpleGrid cols={{ base: 1, md: needsSubject.length }} spacing="sm">
+          {offers('recipe-cost-sheet') && (
           <Select
             label="Recipe (for the cost sheet)"
             placeholder="Choose a recipe"
@@ -129,6 +148,8 @@ export default function ReportsPage() {
             searchable
             clearable
           />
+          )}
+          {offers('production-variance') && (
           <Select
             label="Production order (for variance)"
             placeholder="Choose an order"
@@ -138,6 +159,8 @@ export default function ReportsPage() {
             searchable
             clearable
           />
+          )}
+          {offers('ledger') && (
           <Select
             label="Account (for the ledger)"
             placeholder="Choose an account"
@@ -147,8 +170,10 @@ export default function ReportsPage() {
             searchable
             clearable
           />
+          )}
         </SimpleGrid>
       </Card>
+      )}
 
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
         {(reports || []).map((r) => {

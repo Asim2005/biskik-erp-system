@@ -43,7 +43,21 @@ export function AuthProvider({ children }) {
     [user]
   );
 
-  const value = useMemo(() => ({ user, loading, login, logout, can }), [user, loading, login, logout, can]);
+  /**
+   * Every permission in the list, not just one of them. Some screens are only
+   * usable when the user can read several things at once - the costing screen
+   * needs both the costing permission and the production orders it analyses -
+   * and offering it with one of the two produces an empty, broken page.
+   */
+  const canAll = useCallback(
+    (permissions) => (permissions || []).every((p) => can(p)),
+    [can]
+  );
+
+  const value = useMemo(
+    () => ({ user, loading, login, logout, can, canAll }),
+    [user, loading, login, logout, can, canAll]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

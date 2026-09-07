@@ -170,7 +170,7 @@ async function main() {
   }
 
   // A shortage must be refused outright, leaving nothing half-posted.
-  const store = await login('store@biscuiterp.pk', 'Store@123');
+  const store = await login('warehouse@biscuiterp.pk', 'Store@123');
   const huge = await api('/production/' + open._id + '/issue', {
     method: 'POST',
     token: prod,
