@@ -1,0 +1,22 @@
+{
+  "name": "biskik-erp-system",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Biscuit Manufacturing ERP - React client + Express/MongoDB API",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace biscuit-erp-client",
+    "dev:client": "npm run dev --workspace biscuit-erp-client",
+    "dev:server": "npm run dev --workspace biscuit-erp-server",
+    "start": "npm run start --workspace biscuit-erp-server",
+    "seed": "npm run seed --workspace biscuit-erp-server",
+    "migrate": "node server/src/seed/migrate.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

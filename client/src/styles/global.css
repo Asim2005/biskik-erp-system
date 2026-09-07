@@ -1,0 +1,314 @@
+/* ==========================================================================
+   Global styles, motion and the Excel grid
+   ========================================================================== */
+
+html {
+  /* Lenis drives the smooth scrolling; this is the no-JS fallback */
+  scroll-behavior: smooth;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------------------------- scrollbars --------------------------------- */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--mantine-color-gray-4) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-gray-4);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--mantine-color-gray-5);
+  background-clip: content-box;
+}
+[data-mantine-color-scheme='dark'] *::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-dark-4);
+  background-clip: content-box;
+}
+
+/* ------------------------------ animations -------------------------------- */
+
+@keyframes erp-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes erp-shimmer {
+  0% {
+    background-position: -600px 0;
+  }
+  100% {
+    background-position: 600px 0;
+  }
+}
+
+@keyframes erp-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(219, 153, 45, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(219, 153, 45, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(219, 153, 45, 0);
+  }
+}
+
+.erp-reveal {
+  animation: erp-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.erp-pulse {
+  animation: erp-pulse-ring 2s infinite;
+}
+
+/* cards lift on hover */
+.erp-lift {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease;
+  will-change: transform;
+}
+.erp-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--mantine-shadow-md);
+}
+
+/* the amber wash used behind hero areas */
+.erp-hero {
+  background:
+    radial-gradient(1200px 320px at 12% -40%, rgba(219, 153, 45, 0.20), transparent 65%),
+    radial-gradient(900px 300px at 88% -30%, rgba(140, 97, 68, 0.16), transparent 60%);
+}
+
+.erp-nav-link {
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.erp-nav-link:hover {
+  transform: translateX(2px);
+}
+
+/* ==========================================================================
+   Excel-like grid
+   ========================================================================== */
+
+.xl-grid-wrap {
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: var(--mantine-radius-md);
+  overflow: auto;
+  background: var(--mantine-color-body);
+  max-height: 65vh;
+  position: relative;
+  width: 100%;
+  box-shadow: var(--mantine-shadow-xs);
+}
+[data-mantine-color-scheme='dark'] .xl-grid-wrap {
+  border-color: var(--mantine-color-dark-4);
+}
+
+table.xl-grid {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  min-width: 100%;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  table-layout: auto;
+}
+
+table.xl-grid thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--mantine-color-gray-1);
+  border-bottom: 1px solid var(--mantine-color-gray-3);
+  border-right: 1px solid var(--mantine-color-gray-2);
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mantine-color-gray-7);
+  white-space: nowrap;
+  user-select: none;
+}
+[data-mantine-color-scheme='dark'] table.xl-grid thead th {
+  background: var(--mantine-color-dark-6);
+  border-bottom-color: var(--mantine-color-dark-4);
+  border-right-color: var(--mantine-color-dark-5);
+  color: var(--mantine-color-dark-1);
+}
+
+table.xl-grid tbody td {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-right: 1px solid var(--mantine-color-gray-2);
+  padding: 0;
+  height: 36px;
+  position: relative;
+  background: var(--mantine-color-body);
+}
+[data-mantine-color-scheme='dark'] table.xl-grid tbody td {
+  border-bottom-color: var(--mantine-color-dark-5);
+  border-right-color: var(--mantine-color-dark-5);
+}
+
+/* row-number gutter, frozen on the left like Excel */
+.xl-gutter {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 44px;
+  min-width: 44px;
+  text-align: center !important;
+  background: var(--mantine-color-gray-1) !important;
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  font-weight: 600;
+  user-select: none;
+}
+[data-mantine-color-scheme='dark'] .xl-gutter {
+  background: var(--mantine-color-dark-6) !important;
+  color: var(--mantine-color-dark-2);
+}
+thead .xl-gutter {
+  z-index: 4;
+}
+
+.xl-cell {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 10px;
+  cursor: cell;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.xl-cell.right {
+  justify-content: flex-end;
+}
+.xl-cell.center {
+  justify-content: center;
+}
+.xl-cell.readonly {
+  color: var(--mantine-color-gray-6);
+  background: var(--mantine-color-gray-0);
+  cursor: default;
+}
+[data-mantine-color-scheme='dark'] .xl-cell.readonly {
+  color: var(--mantine-color-dark-2);
+  background: var(--mantine-color-dark-7);
+}
+
+td.xl-selected {
+  box-shadow: inset 0 0 0 2px var(--mantine-color-biscuit-6);
+  z-index: 1;
+}
+td.xl-in-range {
+  background: rgba(219, 153, 45, 0.10) !important;
+}
+td.xl-error {
+  background: rgba(220, 38, 38, 0.10) !important;
+}
+
+.xl-editor {
+  width: 100%;
+  height: 100%;
+  min-height: 36px;
+  border: 0;
+  outline: 2px solid var(--mantine-color-biscuit-6);
+  outline-offset: -2px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  background: var(--mantine-color-body);
+  color: var(--mantine-color-text);
+  box-sizing: border-box;
+}
+select.xl-editor {
+  cursor: pointer;
+  padding-right: 18px;
+}
+.xl-editor.right {
+  text-align: right;
+}
+
+tr.xl-total td {
+  background: var(--mantine-color-gray-1) !important;
+  font-weight: 700;
+  border-top: 2px solid var(--mantine-color-gray-4);
+}
+[data-mantine-color-scheme='dark'] tr.xl-total td {
+  background: var(--mantine-color-dark-6) !important;
+  border-top-color: var(--mantine-color-dark-4);
+}
+
+.xl-hint {
+  font-size: 11px;
+  color: var(--mantine-color-gray-6);
+}
+.xl-hint kbd {
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 10px;
+  background: var(--mantine-color-gray-2);
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin: 0 1px;
+}
+[data-mantine-color-scheme='dark'] .xl-hint kbd {
+  background: var(--mantine-color-dark-5);
+}
+
+/* --------------------------- print (for PDFs) ---------------------------- */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

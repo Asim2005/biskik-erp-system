@@ -1,0 +1,199 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Biscuit Manufacturing ERP Prototype</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6f9;color:#17202a;font:14px Arial}
+header{height:62px;background:#111827;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+aside{position:fixed;top:62px;bottom:0;width:225px;background:#fff;border-right:1px solid #ddd;padding:12px}
+nav button{width:100%;padding:10px;border:0;background:none;text-align:left;border-radius:7px;margin:2px 0;cursor:pointer}
+nav button.active,nav button:hover{background:#eaf2ff;color:#1557c0;font-weight:bold}
+main{margin-left:225px;padding:24px}.page{display:none}.page.active{display:block}
+h1{margin:0 0 5px}.sub{color:#667085;margin-bottom:18px}.panel,.card{background:#fff;border:1px solid #e4e7ec;border-radius:10px;padding:16px;margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.card small{color:#667085}.card strong{display:block;font-size:21px;margin-top:7px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}label{display:block;color:#667085;font-size:12px;margin-bottom:4px}
+input,select{width:100%;padding:8px;border:1px solid #ccd1d8;border-radius:6px}
+table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #edf0f3;text-align:left;font-size:13px}th{background:#f8fafc}
+button.btn{border:0;border-radius:6px;padding:9px 13px;background:#2563eb;color:#fff;cursor:pointer}.green{background:#15803d!important}.gray{background:#e5e7eb!important;color:#111!important}
+.toolbar{text-align:right;margin-top:12px}.total{text-align:right;font-weight:bold;margin-top:12px}.pill{padding:4px 8px;border-radius:12px;background:#ecfdf3;color:#166534;font-size:11px}
+.alert{padding:10px;background:#eff6ff;color:#1e40af;border-radius:7px}
+@media(max-width:950px){.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr 1fr}}
+</style></head>
+<body>
+<header><b>🍪 Biscuit Manufacturing ERP</b><span>Demo Company • Finance & Costing</span></header>
+<aside><nav>
+<button class="active" onclick="show('dashboard',this)">Dashboard</button>
+<button onclick="show('recipes',this)">Recipe Management</button>
+<button onclick="show('production',this)">Production</button>
+<button onclick="show('inventory',this)">Inventory</button>
+<button onclick="show('costing',this)">Costing</button>
+<button onclick="show('accounts',this)">Accounts / GL</button>
+<button onclick="show('tax',this)">Tax</button>
+<button onclick="show('reports',this)">Reports</button>
+</nav></aside>
+<main>
+
+<section id="dashboard" class="page active">
+<h1>Manufacturing Dashboard</h1><div class="sub">Recipe → Production → Inventory → Costing → Accounts → Tax</div>
+<div class="cards">
+<div class="card"><small>Active Recipes</small><strong>3</strong></div>
+<div class="card"><small>Production Today</small><strong>100,000 pcs</strong></div>
+<div class="card"><small>Manufacturing Cost / Biscuit</small><strong>Rs. 7.59</strong></div>
+<div class="card"><small>Cost Variance</small><strong>+Rs. 0.25</strong></div>
+<div class="card"><small>Net Sales Tax</small><strong>Rs. 300,000</strong></div>
+</div>
+<div class="panel"><h2>Workflow</h2><div class="alert">Approved recipe REC-00001 is being used by production order PO-00001. Actual consumption posts to WIP and finished goods.</div>
+<table><tr><th>Stage</th><th>Status</th><th>Reference</th></tr>
+<tr><td>Recipe Approval</td><td><span class="pill">Approved</span></td><td>REC-00001 V1.0</td></tr>
+<tr><td>Production</td><td><span class="pill">Completed</span></td><td>PO-00001</td></tr>
+<tr><td>Accounting</td><td><span class="pill">Posted</span></td><td>JE-00045</td></tr>
+<tr><td>Sales Tax</td><td><span class="pill">Ready</span></td><td>Aug-2026</td></tr></table></div>
+</section>
+
+<section id="recipes" class="page">
+<h1>Recipe Management</h1><div class="sub">Recipe/formula is version-controlled and requires authorized approval.</div>
+<div class="panel">
+<div class="grid">
+<div><label>Product</label><input value="Chocolate Cream Biscuit"></div>
+<div><label>Recipe No.</label><input value="REC-00001"></div>
+<div><label>Version</label><input value="1.0"></div>
+<div><label>Base Batch</label><input id="base" type="number" value="1000"></div>
+</div>
+<h2>Recipe Lines</h2>
+<div class="grid">
+<div><label>Material</label><select id="mat"></select></div>
+<div><label>Quantity</label><input id="qty" type="number" step=".001"></div>
+<div><label>UOM</label><input id="uom" readonly></div>
+<div><label>Rate</label><input id="rate" readonly></div>
+</div>
+<div class="toolbar"><button class="btn" onclick="addLine()">Add Line</button></div>
+<table><thead><tr><th>Material</th><th>Qty</th><th>UOM</th><th>Rate</th><th>Cost</th><th></th></tr></thead><tbody id="recipeRows"></tbody></table>
+<div class="total">Batch Cost: Rs. <span id="batchCost">0</span> | Cost/Biscuit: Rs. <span id="unitCost">0</span></div>
+<hr>
+<div class="grid">
+<div><label>Yield %</label><input value="98"></div>
+<div><label>Wastage %</label><input value="2"></div>
+<div><label>Prepared By</label><input value="R&D / Product Development"></div>
+<div><label>Approval Status</label><select><option>Draft</option><option>Pending Approval</option><option selected>Approved</option><option>Rejected</option></select></div>
+</div>
+<div class="toolbar"><button class="btn gray" onclick="alert('Draft saved')">Save Draft</button>
+<button class="btn green" onclick="alert('Submitted to authorized management')">Submit for Approval</button></div>
+</div>
+<div class="panel"><h2>Version History</h2><table><tr><th>Version</th><th>Effective Date</th><th>Status</th><th>Approved By</th></tr>
+<tr><td>1.0</td><td>01-Aug-2026</td><td>Approved</td><td>Finance Manager</td></tr>
+<tr><td>2.0</td><td>Pending</td><td>Pending Approval</td><td>—</td></tr></table></div>
+</section>
+
+<section id="production" class="page">
+<h1>Production Order</h1><div class="sub">Scale the approved recipe for 100, 1,000, 100,000 or any quantity.</div>
+<div class="panel"><div class="grid">
+<div><label>Production Order</label><input value="PO-00001"></div>
+<div><label>Product</label><input value="Chocolate Cream Biscuit"></div>
+<div><label>Planned Quantity</label><input id="prodQty" type="number" value="100000" oninput="renderProduction()"></div>
+<div><label>Good Output</label><input value="98500"></div>
+</div>
+<table><thead><tr><th>Material</th><th>Standard Qty</th><th>Actual Qty</th><th>Rate</th><th>Actual Cost</th><th>Variance Qty</th></tr></thead><tbody id="prodRows"></tbody></table>
+<div class="toolbar"><button class="btn" onclick="alert('Material issue posted: Dr WIP / Cr Raw Material')">Issue Materials</button>
+<button class="btn green" onclick="alert('Production completed: Dr Finished Goods / Cr WIP')">Complete Production</button></div></div>
+</section>
+
+<section id="inventory" class="page">
+<h1>Inventory</h1><div class="sub">Raw materials, WIP and finished goods.</div>
+<div class="panel"><table><tr><th>Item</th><th>Location</th><th>Qty</th><th>UOM</th><th>Inventory Value</th></tr>
+<tr><td>Flour</td><td>RM Store</td><td>4,175</td><td>KG</td><td>Rs. 626,250</td></tr>
+<tr><td>Cream</td><td>RM Store</td><td>485</td><td>KG</td><td>Rs. 194,000</td></tr>
+<tr><td>Chocolate Cream Biscuit</td><td>Finished Goods</td><td>98,500</td><td>PCS</td><td>Rs. 747,615</td></tr></table></div>
+</section>
+
+<section id="costing" class="page">
+<h1>Product Costing</h1><div class="sub">Manufacturing cost is separate from management full cost.</div>
+<div class="cards">
+<div class="card"><small>Material</small><strong>Rs. 6.52</strong></div>
+<div class="card"><small>Direct Labour</small><strong>Rs. 0.35</strong></div>
+<div class="card"><small>Factory Overhead</small><strong>Rs. 0.72</strong></div>
+<div class="card"><small>Manufacturing Cost</small><strong>Rs. 7.59</strong></div>
+<div class="card"><small>Full Management Cost</small><strong>Rs. 8.14</strong></div>
+</div>
+<div class="panel"><table><tr><th>Cost Element</th><th>Standard / Biscuit</th><th>Actual / Biscuit</th><th>Variance</th></tr>
+<tr><td>Raw Material</td><td>6.34</td><td>6.52</td><td>+0.18</td></tr>
+<tr><td>Direct Labour</td><td>0.32</td><td>0.35</td><td>+0.03</td></tr>
+<tr><td>Factory Overhead</td><td>0.68</td><td>0.72</td><td>+0.04</td></tr>
+<tr><td><b>Manufacturing Cost</b></td><td><b>7.34</b></td><td><b>7.59</b></td><td><b>+0.25</b></td></tr>
+<tr><td>Admin Allocation</td><td>0.25</td><td>0.25</td><td>0.00</td></tr>
+<tr><td>Marketing Allocation</td><td>0.30</td><td>0.30</td><td>0.00</td></tr>
+<tr><td><b>Management Full Cost</b></td><td><b>7.89</b></td><td><b>8.14</b></td><td><b>+0.25</b></td></tr></table></div>
+</section>
+
+<section id="accounts" class="page">
+<h1>Accounts / General Ledger</h1><div class="sub">Manufacturing and sales transactions flow into the GL.</div>
+<div class="panel"><h2>Production Entries</h2><table><tr><th>Account</th><th>Debit</th><th>Credit</th></tr>
+<tr><td>WIP — Production</td><td>Rs. 634,000</td><td>—</td></tr>
+<tr><td>Raw Material Inventory</td><td>—</td><td>Rs. 634,000</td></tr>
+<tr><td>WIP — Conversion Cost</td><td>Rs. 100,000</td><td>—</td></tr>
+<tr><td>Labour / Factory Overhead</td><td>—</td><td>Rs. 100,000</td></tr>
+<tr><td>Finished Goods Inventory</td><td>Rs. 734,000</td><td>—</td></tr>
+<tr><td>WIP — Production</td><td>—</td><td>Rs. 734,000</td></tr></table></div>
+<div class="panel"><h2>Sales & COGS</h2><table><tr><th>Account</th><th>Debit</th><th>Credit</th></tr>
+<tr><td>Customer Receivable</td><td>Rs. 1,180,000</td><td>—</td></tr>
+<tr><td>Sales Revenue</td><td>—</td><td>Rs. 1,000,000</td></tr>
+<tr><td>Output Sales Tax Payable</td><td>—</td><td>Rs. 180,000</td></tr>
+<tr><td>COGS</td><td>Rs. 100,000</td><td>—</td></tr>
+<tr><td>Finished Goods Inventory</td><td>—</td><td>Rs. 100,000</td></tr></table></div>
+</section>
+
+<section id="tax" class="page">
+<h1>Tax Module</h1><div class="sub">Illustrative setup — actual rates and taxability must be configured for the product and applicable Pakistani law.</div>
+<div class="cards">
+<div class="card"><small>Input Tax</small><strong>Rs. 500,000</strong></div>
+<div class="card"><small>Output Tax</small><strong>Rs. 800,000</strong></div>
+<div class="card"><small>Adjustments</small><strong>Rs. 0</strong></div>
+<div class="card"><small>Net Payable</small><strong>Rs. 300,000</strong></div>
+<div class="card"><small>Status</small><strong>Ready</strong></div>
+</div>
+<div class="panel"><h2>Tax Configuration</h2><div class="grid">
+<div><label>Tax Type</label><select><option>Sales Tax</option><option>Withholding Tax</option><option>Income Tax</option></select></div>
+<div><label>Example Rate %</label><input value="18"></div>
+<div><label>Input Tax Account</label><input value="Input Sales Tax"></div>
+<div><label>Output Tax Account</label><input value="Output Sales Tax Payable"></div>
+</div><div class="alert" style="margin-top:12px">Recoverable input tax is kept separate from inventory cost. Output tax is recorded separately from sales revenue.</div></div>
+<div class="panel"><h2>Tax Ledger</h2><table><tr><th>Transaction</th><th>Input</th><th>Output</th><th>Net</th></tr>
+<tr><td>Supplier invoices</td><td>500,000</td><td>—</td><td>500,000 Input</td></tr>
+<tr><td>Sales invoices</td><td>—</td><td>800,000</td><td>800,000 Output</td></tr>
+<tr><td><b>Net Tax Payable</b></td><td colspan="2"></td><td><b>Rs. 300,000</b></td></tr></table></div>
+</section>
+
+<section id="reports" class="page">
+<h1>Reports</h1><div class="sub">Key manufacturing, costing and financial-control reports.</div>
+<div class="panel"><table><tr><th>Report</th><th>Purpose</th><th>Status</th></tr>
+<tr><td>Recipe Cost Sheet</td><td>Batch and unit cost</td><td>Available</td></tr>
+<tr><td>Standard vs Actual Cost</td><td>Cost variance</td><td>Available</td></tr>
+<tr><td>Material Consumption Variance</td><td>Wastage / excess usage</td><td>Available</td></tr>
+<tr><td>Inventory Valuation</td><td>RM / WIP / FG valuation</td><td>Available</td></tr>
+<tr><td>Trial Balance / GL</td><td>Accounting control</td><td>Available</td></tr>
+<tr><td>Sales Tax Summary</td><td>Input / output tax</td><td>Available</td></tr></table></div>
+</section>
+
+</main>
+<script>
+const materials=[
+{name:"Flour",uom:"KG",rate:150},{name:"Sugar",uom:"KG",rate:180},{name:"Oil",uom:"KG",rate:500},
+{name:"Cream",uom:"KG",rate:400},{name:"Flavour",uom:"KG",rate:2000},{name:"Wrapper",uom:"PCS",rate:.8},{name:"Carton",uom:"PCS",rate:30}];
+let recipe=[
+{name:"Flour",qty:8,uom:"KG",rate:150},{name:"Sugar",qty:3,uom:"KG",rate:180},{name:"Oil",qty:2,uom:"KG",rate:500},
+{name:"Cream",qty:5,uom:"KG",rate:400},{name:"Flavour",qty:.1,uom:"KG",rate:2000},{name:"Wrapper",qty:1000,uom:"PCS",rate:.8},{name:"Carton",qty:20,uom:"PCS",rate:30}];
+
+function show(id,b){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active")}
+mat.innerHTML=materials.map((m,i)=>`<option value="${i}">${m.name}</option>`).join("");
+function sync(){let m=materials[+mat.value||0];uom.value=m.uom;rate.value=m.rate.toFixed(2)}mat.onchange=sync;sync();
+
+function renderRecipe(){
+recipeRows.innerHTML=recipe.map((x,i)=>`<tr><td>${x.name}</td><td>${x.qty}</td><td>${x.uom}</td><td>Rs. ${x.rate.toFixed(2)}</td><td>Rs. ${(x.qty*x.rate).toFixed(2)}</td><td><button class="btn gray" onclick="removeLine(${i})">Remove</button></td></tr>`).join("");
+let total=recipe.reduce((s,x)=>s+x.qty*x.rate,0);batchCost.textContent=total.toFixed(2);unitCost.textContent=(total/(+base.value||1000)).toFixed(2);renderProduction()
+}
+function addLine(){let m=materials[+mat.value],q=+qty.value;if(!q)return alert("Enter quantity");recipe.push({name:m.name,qty:q,uom:m.uom,rate:m.rate});qty.value="";renderRecipe()}
+function removeLine(i){recipe.splice(i,1);renderRecipe()}
+function renderProduction(){
+let q=+prodQty.value||0,b=+base.value||1000;
+prodRows.innerHTML=recipe.map(x=>{let std=x.qty*q/b;let act=std*(x.name==="Cream"?1.03:x.name==="Flour"?1.03125:1.01);return `<tr><td>${x.name}</td><td>${std.toFixed(3)} ${x.uom}</td><td>${act.toFixed(3)} ${x.uom}</td><td>Rs. ${x.rate.toFixed(2)}</td><td>Rs. ${(act*x.rate).toFixed(2)}</td><td>+${(act-std).toFixed(3)}</td></tr>`}).join("")
+}
+base.oninput=renderRecipe;renderRecipe();
+</script></body></html>

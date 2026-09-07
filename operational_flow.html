@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biscuit ERP — Interactive Operational Flow & Architecture</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Anime.js for smooth kinetic animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              500: '#d97706',
+              600: '#b45309',
+              primary: '#e67e22',
+              gold: '#f1c40f',
+              dark: '#0f172a',
+              card: '#1e293b',
+              accent: '#3b82f6',
+              emerald: '#10b981',
+              rose: '#f43f5e'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #f8fafc;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    }
+
+    .glass-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(230, 126, 34, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .glow-orange {
+      box-shadow: 0 0 30px rgba(230, 126, 34, 0.25);
+    }
+
+    .glow-green {
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.25);
+    }
+
+    .glow-blue {
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.25);
+    }
+
+    /* Animated flow path */
+    .flow-line {
+      stroke-dasharray: 8, 8;
+      animation: dash 30s linear infinite;
+    }
+
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -1000;
+      }
+    }
+
+    .pulse-node {
+      animation: pulseNode 2s infinite;
+    }
+
+    @keyframes pulseNode {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.15); opacity: 0.8; }
+    }
+
+    .step-btn {
+      transition: all 0.3s ease;
+    }
+    .step-btn.active {
+      background: linear-gradient(135deg, #e67e22 0%, #b45309 100%);
+      color: #ffffff;
+      box-shadow: 0 0 20px rgba(230, 126, 34, 0.4);
+      border-color: #f59e0b;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #e67e22;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-50 glass-panel border-b border-slate-800 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center text-2xl shadow-lg glow-orange">
+          🍪
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            Biscuit Manufacturing ERP
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-mono">v1.0 Live</span>
+          </h1>
+          <p class="text-xs text-slate-400">Interactive End-to-End Operational & Accounting Flow</p>
+        </div>
+      </div>
+
+      <!-- Controls & Actions -->
+      <div class="flex items-center gap-3">
+        <button id="prevBtn" onclick="prevStep()" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition border border-slate-700 flex items-center gap-2">
+          <i class="fa-solid fa-chevron-left"></i> Previous
+        </button>
+        <button id="playBtn" onclick="toggleAutoPlay()" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm transition shadow-lg flex items-center gap-2">
+          <i id="playIcon" class="fa-solid fa-play"></i> <span id="playText">Auto Play Flow</span>
+        </button>
+        <button id="nextBtn" onclick="nextStep()" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition border border-slate-700 flex items-center gap-2">
+          Next <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6 flex-1 w-full">
+
+    <!-- STEP PROGRESS TRACKER -->
+    <div class="glass-panel rounded-2xl p-4 overflow-x-auto">
+      <div class="flex items-center justify-between min-w-[850px] relative px-2">
+        <!-- Connecting Line -->
+        <div class="absolute top-1/2 left-8 right-8 h-1 bg-slate-800 -translate-y-1/2 -z-0"></div>
+        <div id="progressLine" class="absolute top-1/2 left-8 h-1 bg-gradient-to-r from-amber-500 to-emerald-500 -translate-y-1/2 transition-all duration-500 -z-0" style="width: 0%;"></div>
+
+        <!-- 8 Step Nodes -->
+        <div id="stepButtonsContainer" class="flex justify-between w-full relative z-10">
+          <!-- Dynamically Rendered -->
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN INTERACTIVE PIPELINE STAGE -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- LEFT 7 COLS: ANIMATED VISUAL PIPELINE & DIAGRAM -->
+      <div class="lg:col-span-7 glass-panel rounded-2xl p-6 flex flex-col justify-between space-y-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span id="stepNumberBadge" class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 font-mono font-bold flex items-center justify-center text-sm border border-amber-500/30">
+              01
+            </span>
+            <h2 id="stepTitle" class="text-lg font-bold text-white tracking-wide">
+              Loading Step Title...
+            </h2>
+          </div>
+          <span id="roleBadge" class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1.5">
+            <i class="fa-solid fa-user-shield text-[10px]"></i> QA / R&D Officer
+          </span>
+        </div>
+
+        <!-- SVG INTERACTIVE FACTORY PIPELINE -->
+        <div class="relative bg-slate-950/80 rounded-xl p-4 border border-slate-800/80 min-h-[300px] flex items-center justify-center overflow-hidden">
+          
+          <svg class="w-full h-[260px]" viewBox="0 0 700 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#f59e0b" />
+                <stop offset="50%" stop-color="#10b981" />
+                <stop offset="100%" stop-color="#3b82f6" />
+              </linearGradient>
+              <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+
+            <!-- Flow Connecting Pipes -->
+            <path id="path1" d="M 60 120 L 150 120" stroke="#334155" stroke-width="4" stroke-linecap="round" />
+            <path id="path2" d="M 150 120 L 250 120" stroke="#334155" stroke-width="4" stroke-linecap="round" />
+            <path id="path3" d="M 250 120 L 350 120" stroke="#334155" stroke-width="4" stroke-linecap="round" />
+            <path id="path4" d="M 350 120 L 450 120" stroke="#334155" stroke-width="4" stroke-linecap="round" />
+            <path id="path5" d="M 450 120 L 550 120" stroke="#334155" stroke-width="4" stroke-linecap="round" />
+            <path id="path6" d="M 550 120 L 640 120" stroke="#334155" stroke-width="4" stroke-linecap="round" />
+
+            <!-- Active Flow Line Overlay -->
+            <path id="activeFlowPath" d="M 60 120 L 640 120" stroke="url(#lineGrad)" stroke-width="4" stroke-dasharray="10 10" class="flow-line" filter="url(#glow)" />
+
+            <!-- ANIMATED STAGE NODES -->
+            <g id="node-1" transform="translate(60, 120)" class="cursor-pointer" onclick="setStep(0)">
+              <circle r="26" fill="#1e293b" stroke="#f59e0b" stroke-width="3" filter="url(#glow)"/>
+              <text y="5" text-anchor="middle" fill="#f59e0b" font-size="18">🧪</text>
+              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">R&D Recipe</text>
+            </g>
+
+            <g id="node-2" transform="translate(150, 120)" class="cursor-pointer" onclick="setStep(1)">
+              <circle r="26" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+              <text y="5" text-anchor="middle" fill="#cbd5e1" font-size="18">✅</text>
+              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">Approval</text>
+            </g>
+
+            <g id="node-3" transform="translate(250, 120)" class="cursor-pointer" onclick="setStep(2)">
+              <circle r="26" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+              <text y="5" text-anchor="middle" fill="#cbd5e1" font-size="18">📦</text>
+              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">Store GRN</text>
+            </g>
+
+            <g id="node-4" transform="translate(350, 120)" class="cursor-pointer" onclick="setStep(3)">
+              <circle r="26" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+              <text y="5" text-anchor="middle" fill="#cbd5e1" font-size="18">💥</text>
+              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">BOM Release</text>
+            </g>
+
+            <g id="node-5" transform="translate(450, 120)" class="cursor-pointer" onclick="setStep(4)">
+              <circle r="26" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+              <text y="5" text-anchor="middle" fill="#cbd5e1" font-size="18">🏭</text>
+              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">WIP Floor</text>
+            </g>
+
+            <g id="node-6" transform="translate(550, 120)" class="cursor-pointer" onclick="setStep(5)">
+              <circle r="26" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+              <text y="5" text-anchor="middle" fill="#cbd5e1" font-size="18">📊</text>
+              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">Variance Engine</text>
+            </g>
+
+            <g id="node-7" transform="translate(640, 120)" class="cursor-pointer" onclick="setStep(6)">
+              <circle r="26" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+              <text y="5" text-anchor="middle" fill="#cbd5e1" font-size="18">🏷️</text>
+              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">Sales Invoice</text>
+            </g>
+
+            <!-- MOVING MATERIAL PARTICLE CARRIER -->
+            <circle id="movingCarrier" r="9" fill="#f59e0b" filter="url(#glow)">
+              <animate attributeName="opacity" values="0.7;1;0.7" dur="1s" repeatCount="indefinite"/>
+            </circle>
+          </svg>
+
+          <!-- Stage State Banner -->
+          <div class="absolute bottom-3 left-4 right-4 flex items-center justify-between text-xs bg-slate-900/90 py-2 px-3.5 rounded-lg border border-slate-800 font-mono">
+            <span class="text-slate-400 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              Live Pipeline Status: <span id="pipelineStatusText" class="text-amber-400 font-bold">R&D Recipe Formulation</span>
+            </span>
+            <span class="text-slate-500" id="stepCounterLabel">Step 1 of 8</span>
+          </div>
+        </div>
+
+        <!-- OPERATIONAL DESCRIPTION & KEY RULES -->
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-1">What Happens at this Step</h3>
+            <p id="stepDescription" class="text-slate-200 text-sm leading-relaxed">
+              Description text will appear here...
+            </p>
+          </div>
+
+          <!-- KEY BUSINESS RULES GRID -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="glass-card rounded-xl p-3.5 border border-slate-800">
+              <div class="flex items-center gap-2 text-amber-400 text-xs font-bold mb-1">
+                <i class="fa-solid fa-triangle-exclamation"></i> Business & Control Rule
+              </div>
+              <p id="businessRuleText" class="text-xs text-slate-300">
+                Rule description...
+              </p>
+            </div>
+            <div class="glass-card rounded-xl p-3.5 border border-slate-800">
+              <div class="flex items-center gap-2 text-emerald-400 text-xs font-bold mb-1">
+                <i class="fa-solid fa-calculator"></i> Valuation & Formula
+              </div>
+              <p id="formulaText" class="text-xs text-slate-300 font-mono">
+                Formula detail...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT 5 COLS: LIVE DOUBLE-ENTRY LEDGER & JOURNAL PREVIEW -->
+      <div class="lg:col-span-5 glass-panel rounded-2xl p-6 flex flex-col justify-between space-y-6">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-book-bookmark text-emerald-400"></i>
+              <h3 class="text-md font-bold text-white">General Ledger Postings</h3>
+            </div>
+            <span id="journalCodeTag" class="font-mono text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
+              JE-AUTO
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mb-4">
+            Automatic double-entry journal entries triggered in real-time at this stage of the operation.
+          </p>
+
+          <!-- JOURNAL ENTRIES TABLE -->
+          <div class="bg-slate-950 rounded-xl p-3 border border-slate-800/90 font-mono text-xs overflow-hidden">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 text-[11px]">
+                  <th class="pb-2 pl-1">Account</th>
+                  <th class="pb-2 text-right">Debit (PKR)</th>
+                  <th class="pb-2 text-right pr-1">Credit (PKR)</th>
+                </tr>
+              </thead>
+              <tbody id="journalLinesBody" class="divide-y divide-slate-900/60">
+                <!-- Dynamically populated lines -->
+              </tbody>
+              <tfoot>
+                <tr class="border-t-2 border-slate-700 text-white font-bold bg-slate-900/40">
+                  <td class="pt-2.5 pb-1 pl-1">Total Balance</td>
+                  <td id="totalDebitCell" class="pt-2.5 pb-1 text-right text-emerald-400">0.00</td>
+                  <td id="totalCreditCell" class="pt-2.5 pb-1 text-right pr-1 text-emerald-400">0.00</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- DRIFT & ASSERTION BADGE -->
+        <div id="assertionBox" class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-start gap-3">
+          <i class="fa-solid fa-circle-check text-emerald-400 text-lg mt-0.5"></i>
+          <div>
+            <h4 class="text-xs font-bold text-emerald-300" id="assertionTitle">Zero Ledger Drift Assertion</h4>
+            <p class="text-[11px] text-emerald-200/80 leading-normal" id="assertionDetail">
+              Debits equal Credits. WIP nets to exactly 0.00 upon order completion. Stock ledger agrees with GL.
+            </p>
+          </div>
+        </div>
+
+        <!-- QUICK ACCESS LINKS -->
+        <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+          <span>Target ERP Server: <strong class="text-white font-mono">localhost:5000</strong></span>
+          <a href="http://localhost:5173" target="_blank" class="text-amber-400 hover:underline flex items-center gap-1 font-semibold">
+            Open Live ERP <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTTOM ACCORDION CARDS: DEEP-DIVE MODULE EXPLORER -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- CARD 1: VARIANCE ENGINE -->
+      <div class="glass-panel rounded-xl p-5 space-y-3">
+        <div class="flex items-center gap-2 text-amber-400 font-bold text-sm">
+          <i class="fa-solid fa-chart-pie"></i> 5-Factor Variance Engine
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Standard costing freezes the BOM. Completion quantifies Material Usage, Price, Labour, Overhead, and Yield variances.
+        </p>
+        <div class="text-[11px] font-mono text-slate-400 bg-slate-950 p-2.5 rounded-lg border border-slate-800 space-y-1">
+          <div>• Usage: (Actual Qty − Std Qty) × Std Rate</div>
+          <div>• Price: (Actual Rate − Std Rate) × Actual Qty</div>
+          <div>• Yield: (Planned − Good) × Std Unit Cost</div>
+        </div>
+      </div>
+
+      <!-- CARD 2: MOVING AVERAGE VALUATION -->
+      <div class="glass-panel rounded-xl p-5 space-y-3">
+        <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+          <i class="fa-solid fa-cubes-stacked"></i> Moving Average Inventory
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Inbound receipts re-average the rate. Outbound issues take the current moving average so remaining stock value stays true.
+        </p>
+        <div class="text-[11px] font-mono text-slate-400 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+          New Rate = (Old Value + Inbound Value) / (Old Qty + Inbound Qty)
+        </div>
+      </div>
+
+      <!-- CARD 3: SEGREGATION OF DUTIES -->
+      <div class="glass-panel rounded-xl p-5 space-y-3">
+        <div class="flex items-center gap-2 text-blue-400 font-bold text-sm">
+          <i class="fa-solid fa-user-lock"></i> Segregation of Duties (SoD)
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          7 distinct roles across R&D, Procurement, Warehouse, Production, Sales, and Finance prevent unauthorized single-user actions.
+        </p>
+        <div class="text-[11px] font-mono text-slate-400 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+          QA Submits Recipe ➔ Finance Approves ➔ Prod Issues ➔ Controller Closes
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="glass-panel border-t border-slate-800 py-4 px-6 text-center text-xs text-slate-400 mt-8">
+    <p>Biscuit Manufacturing ERP — Interactive Operational Flow Architecture &copy; 2026</p>
+  </footer>
+
+  <!-- SCRIPT ENGINE -->
+  <script>
+    const STEPS = [
+      {
+        id: 1,
+        title: "1. Recipe & Formula Formulation (R&D)",
+        role: "QA / R&D Officer",
+        roleColor: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+        description: "The QA/R&D officer formulates a recipe (e.g. Marie Biscuit 100g for 1,000 kg batch size). Standard raw ingredients (Flour, Sugar, Palm Oil) are specified along with expected line wastage % and good unit yield %.",
+        rule: "Recipe is submitted in DRAFT mode and moves to PENDING_APPROVAL. Segregation of Duties prohibits the QA author from approving their own formula.",
+        formula: "goodUnits = (baseBatchQty × yieldPercent) / 100",
+        journalCode: "NO-JE (DRAFT)",
+        journals: [
+          { acc: "Recipe Status", dr: "PENDING_APPROVAL", cr: "-" },
+          { acc: "Manufacturing Cost / Unit", dr: "Rs. 42.50 (Est)", cr: "-" }
+        ],
+        assertionTitle: "Recipe Unapproved Locking",
+        assertionDetail: "Unapproved recipes cannot be selected for production orders. Stock is untouched.",
+        cx: 60
+      },
+      {
+        id: 2,
+        title: "2. Recipe Economics & Approval (Finance)",
+        role: "Finance Manager / Controller",
+        roleColor: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+        description: "Finance reviews unit margins, raw material standard rates, labour, and factory overhead allocations. Upon sign-off, the recipe status changes to APPROVED.",
+        rule: "Approving a new recipe version automatically archives superseded versions. Approved recipes are locked and cannot be edited.",
+        formula: "MfgCostPerUnit = MatCostPerUnit + Labour + FactoryOverhead",
+        journalCode: "REC-APPROVED",
+        journals: [
+          { acc: "Recipe Status", dr: "APPROVED (v1.0)", cr: "-" },
+          { acc: "Superseded Version", dr: "ARCHIVED", cr: "-" }
+        ],
+        assertionTitle: "Segregation of Duties Enforced",
+        assertionDetail: "The API rejects approval attempts if the approver is the same user who submitted the version.",
+        cx: 150
+      },
+      {
+        id: 3,
+        title: "3. Goods Receipt Note (Warehouse / Store)",
+        role: "Warehouse Officer / Storekeeper",
+        roleColor: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+        description: "Raw materials arrive from suppliers against a Purchase Order. The storekeeper creates a Goods Receipt Note (GRN), moving physical inventory into the Raw Material Store.",
+        rule: "Inventory moving-average rate is updated immediately. Liability sits in GRNI (Goods Received Not Invoiced) until supplier invoice matching.",
+        formula: "NewAvgRate = (OldValue + InboundVal) / (OldQty + InboundQty)",
+        journalCode: "GRN-2026-0042",
+        journals: [
+          { acc: "1201 - Raw Material Inventory", dr: "450,000.00", cr: "0.00" },
+          { acc: "2103 - Goods Received Not Invoiced (GRNI)", dr: "0.00", cr: "450,000.00" }
+        ],
+        assertionTitle: "Stock-to-GL Balance Guaranteed",
+        assertionDetail: "Stock valuation ledger increase matches the debit to Account 1201 to the exact cent.",
+        cx: 250
+      },
+      {
+        id: 4,
+        title: "4. Production Order & BOM Explosion",
+        role: "Production Manager",
+        roleColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+        description: "Production Manager plans a batch run (e.g. 50,000 good packs). The system explodes the approved recipe linearly to freeze standard material quantities and standard unit costs.",
+        rule: "Only APPROVED recipes can be exploded. Creates a released production order ready for material issuance.",
+        formula: "ScaleFactor = PlannedQty / GoodUnitsPerBatch",
+        journalCode: "ORD-RELEASED",
+        journals: [
+          { acc: "Order Status", dr: "RELEASED", cr: "-" },
+          { acc: "Planned Std Material Cost", dr: "Rs. 1,600,000.00", cr: "-" }
+        ],
+        assertionTitle: "Standard Cost Frozen",
+        assertionDetail: "Order standard cost is locked at creation time to calculate true variance upon completion.",
+        cx: 350
+      },
+      {
+        id: 5,
+        title: "5. Shop Floor Material Issuance (WIP)",
+        role: "Warehouse / Production Officer",
+        roleColor: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+        description: "Warehouse issues raw ingredients to the baking floor. Materials leave Raw Material Store and enter Work in Process (WIP).",
+        rule: "System checks stock availability (refuses shortage). Issued stock is valued at current moving-average rate.",
+        formula: "IssuedValue = ActualQtyIssued × MovingAvgRate",
+        journalCode: "JE-ISSUE-881",
+        journals: [
+          { acc: "1202 - Work in Process (WIP)", dr: "1,615,000.00", cr: "0.00" },
+          { acc: "1201 - Raw Material Inventory", dr: "0.00", cr: "1,615,000.00" }
+        ],
+        assertionTitle: "Shortage Prevention Control",
+        assertionDetail: "If stock is insufficient, the issue API aborts before any stock or ledger movement posts.",
+        cx: 450
+      },
+      {
+        id: 6,
+        title: "6. Production Completion & Variance Engine",
+        role: "Production Officer & Costing Engine",
+        roleColor: "bg-rose-500/20 text-rose-400 border-rose-500/30",
+        description: "Baking completes. Floor inputs actual good output (49,200 packs), scrap (400 packs), actual labour, and overhead. The Costing Engine calculates all 5 variances.",
+        rule: "Finished goods capitalized at standard cost. WIP nets to zero. Variances & yield loss absorb the delta.",
+        formula: "Variance = Usage + Price + Labour + Overhead + YieldLoss",
+        journalCode: "JE-PROD-CMPL",
+        journals: [
+          { acc: "1203 - Finished Goods Inventory", dr: "2,066,400.00", cr: "0.00" },
+          { acc: "5201 - Material Usage Variance", dr: "15,000.00", cr: "0.00" },
+          { acc: "5202 - Material Price Variance", dr: "8,500.00", cr: "0.00" },
+          { acc: "5205 - Yield Loss Variance", dr: "33,600.00", cr: "0.00" },
+          { acc: "1202 - Work in Process (WIP)", dr: "0.00", cr: "2,123,500.00" }
+        ],
+        assertionTitle: "WIP Net to Zero Assertion",
+        assertionDetail: "WIP balance for completed order equals exactly 0.00. Debits equal credits.",
+        cx: 550
+      },
+      {
+        id: 7,
+        title: "7. Sales Invoicing & Revenue / COGS",
+        role: "Sales Officer",
+        roleColor: "bg-cyan-500/20 text-cyan-400 border-cyan-400/30",
+        description: "Customer invoice is generated for dispatch. The invoice records Gross Sales, 18% Sales Tax liability, and Cost of Goods Sold (COGS) based on finished goods moving average.",
+        rule: "Output tax is kept out of revenue. COGS is recognized at invoice posting.",
+        formula: "GrossProfit = NetRevenue − COGS",
+        journalCode: "INV-2026-091",
+        journals: [
+          { acc: "1101 - Accounts Receivable", dr: "3,540,000.00", cr: "0.00" },
+          { acc: "5001 - Cost of Goods Sold (COGS)", dr: "2,100,000.00", cr: "0.00" },
+          { acc: "4001 - Sales Revenue", dr: "0.00", cr: "3,000,000.00" },
+          { acc: "2201 - Output Sales Tax Liability", dr: "0.00", cr: "540,000.00" },
+          { acc: "1203 - Finished Goods Inventory", dr: "0.00", cr: "2,100,000.00" }
+        ],
+        assertionTitle: "Tax & Revenue Separation",
+        assertionDetail: "18% Sales Tax is isolated into Account 2201 and excluded from revenue.",
+        cx: 640
+      },
+      {
+        id: 8,
+        title: "8. Tax Settlement & Month-End Close",
+        role: "Financial Controller",
+        roleColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+        description: "Controller runs the close checklist, nets Input Tax against Output Tax, verifies trial balance balance, and locks the accounting period (FiscalPeriod CLOSED).",
+        rule: "Closed accounting periods reject any transactions or adjustments dated inside them.",
+        formula: "NetTaxPayable = OutputTax Liability − InputTax Asset",
+        journalCode: "PERIOD-CLOSED",
+        journals: [
+          { acc: "Trial Balance Status", dr: "BALANCED (0.00 Diff)", cr: "-" },
+          { acc: "Fiscal Period", dr: "2026-08 (CLOSED)", cr: "-" }
+        ],
+        assertionTitle: "Period Lock Integrity",
+        assertionDetail: "assertPeriodOpen middleware blocks back-dated entries into closed periods across all routers.",
+        cx: 640
+      }
+    ];
+
+    let currentStep = 0;
+    let autoPlayInterval = null;
+
+    function renderStepButtons() {
+      const container = document.getElementById('stepButtonsContainer');
+      container.innerHTML = '';
+
+      STEPS.forEach((step, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `step-btn w-10 h-10 rounded-xl font-bold font-mono text-xs flex items-center justify-center border border-slate-700 bg-slate-900 text-slate-400 ${idx === 0 ? 'active' : ''}`;
+        btn.innerText = String(step.id).padStart(2, '0');
+        btn.onclick = () => setStep(idx);
+        container.appendChild(btn);
+      });
+    }
+
+    function setStep(idx) {
+      currentStep = idx;
+      const data = STEPS[idx];
+
+      document.getElementById('stepNumberBadge').innerText = String(data.id).padStart(2, '0');
+      document.getElementById('stepTitle').innerText = data.title;
+      document.getElementById('roleBadge').className = `px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1.5 ${data.roleColor}`;
+      document.getElementById('roleBadge').innerHTML = `<i class="fa-solid fa-user-gear text-[10px]"></i> ${data.role}`;
+
+      const percent = (idx / (STEPS.length - 1)) * 100;
+      document.getElementById('progressLine').style.width = `${percent}%`;
+
+      const btns = document.querySelectorAll('.step-btn');
+      btns.forEach((b, i) => {
+        if (i === idx) b.classList.add('active');
+        else b.classList.remove('active');
+      });
+
+      document.getElementById('pipelineStatusText').innerText = data.title;
+      document.getElementById('stepCounterLabel').innerText = `Step ${idx + 1} of ${STEPS.length}`;
+
+      const carrier = document.getElementById('movingCarrier');
+      anime({
+        targets: carrier,
+        cx: data.cx,
+        cy: 120,
+        duration: 800,
+        easing: 'spring(1, 80, 12, 0)'
+      });
+
+      for (let i = 1; i <= 7; i++) {
+        const n = document.getElementById(`node-${i}`);
+        if (n) {
+          const circle = n.querySelector('circle');
+          if (i === data.id || (data.id === 8 && i === 7)) {
+            circle.setAttribute('stroke', '#f59e0b');
+            circle.setAttribute('stroke-width', '3');
+            circle.setAttribute('fill', '#1e293b');
+          } else {
+            circle.setAttribute('stroke', '#64748b');
+            circle.setAttribute('stroke-width', '2');
+            circle.setAttribute('fill', '#0f172a');
+          }
+        }
+      }
+
+      document.getElementById('stepDescription').innerText = data.description;
+      document.getElementById('businessRuleText').innerText = data.rule;
+      document.getElementById('formulaText').innerText = data.formula;
+
+      document.getElementById('journalCodeTag').innerText = data.journalCode;
+      const tbody = document.getElementById('journalLinesBody');
+      tbody.innerHTML = '';
+
+      let totalDr = 0;
+      let totalCr = 0;
+
+      data.journals.forEach(j => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-900/50 transition";
+        
+        const drNum = parseFloat(j.dr.replace(/[^0-9.-]+/g,"")) || 0;
+        const crNum = parseFloat(j.cr.replace(/[^0-9.-]+/g,"")) || 0;
+        totalDr += drNum;
+        totalCr += crNum;
+
+        tr.innerHTML = `
+          <td class="py-2 pl-1 font-sans text-slate-200">${j.acc}</td>
+          <td class="py-2 text-right ${drNum > 0 ? 'text-emerald-400 font-bold' : 'text-slate-500'}">${j.dr}</td>
+          <td class="py-2 text-right pr-1 ${crNum > 0 ? 'text-amber-400 font-bold' : 'text-slate-500'}">${j.cr}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('totalDebitCell').innerText = totalDr > 0 ? totalDr.toLocaleString('en-PK', {minimumFractionDigits: 2}) : "0.00";
+      document.getElementById('totalCreditCell').innerText = totalCr > 0 ? totalCr.toLocaleString('en-PK', {minimumFractionDigits: 2}) : "0.00";
+
+      document.getElementById('assertionTitle').innerText = data.assertionTitle;
+      document.getElementById('assertionDetail').innerText = data.assertionDetail;
+    }
+
+    function nextStep() {
+      setStep((currentStep + 1) % STEPS.length);
+    }
+
+    function prevStep() {
+      setStep((currentStep - 1 + STEPS.length) % STEPS.length);
+    }
+
+    function toggleAutoPlay() {
+      const btn = document.getElementById('playBtn');
+      const icon = document.getElementById('playIcon');
+      const text = document.getElementById('playText');
+
+      if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+        icon.className = "fa-solid fa-play";
+        text.innerText = "Auto Play Flow";
+        btn.classList.remove('bg-rose-500', 'hover:bg-rose-600');
+        btn.classList.add('bg-amber-500', 'hover:bg-amber-600');
+      } else {
+        autoPlayInterval = setInterval(nextStep, 3500);
+        icon.className = "fa-solid fa-pause";
+        text.innerText = "Pause Flow";
+        btn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
+        btn.classList.add('bg-rose-500', 'hover:bg-rose-600');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderStepButtons();
+      setStep(0);
+    });
+  </script>
+</body>
+</html>
