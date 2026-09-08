@@ -174,7 +174,7 @@
         <div class="absolute top-1/2 left-8 right-8 h-1 bg-slate-800 -translate-y-1/2 -z-0"></div>
         <div id="progressLine" class="absolute top-1/2 left-8 h-1 bg-gradient-to-r from-amber-500 to-emerald-500 -translate-y-1/2 transition-all duration-500 -z-0" style="width: 0%;"></div>
 
-        <!-- 8 Step Nodes -->
+        <!-- rendered from the step data -->
         <div id="stepButtonsContainer" class="flex justify-between w-full relative z-10">
           <!-- Dynamically Rendered -->
         </div>
@@ -216,62 +216,15 @@
               </filter>
             </defs>
 
-            <!-- Flow Connecting Pipes -->
-            <path id="path1" d="M 60 120 L 150 120" stroke="#334155" stroke-width="4" stroke-linecap="round" />
-            <path id="path2" d="M 150 120 L 250 120" stroke="#334155" stroke-width="4" stroke-linecap="round" />
-            <path id="path3" d="M 250 120 L 350 120" stroke="#334155" stroke-width="4" stroke-linecap="round" />
-            <path id="path4" d="M 350 120 L 450 120" stroke="#334155" stroke-width="4" stroke-linecap="round" />
-            <path id="path5" d="M 450 120 L 550 120" stroke="#334155" stroke-width="4" stroke-linecap="round" />
-            <path id="path6" d="M 550 120 L 640 120" stroke="#334155" stroke-width="4" stroke-linecap="round" />
-
-            <!-- Active Flow Line Overlay -->
-            <path id="activeFlowPath" d="M 60 120 L 640 120" stroke="url(#lineGrad)" stroke-width="4" stroke-dasharray="10 10" class="flow-line" filter="url(#glow)" />
-
-            <!-- ANIMATED STAGE NODES -->
-            <g id="node-1" transform="translate(60, 120)" class="cursor-pointer" onclick="setStep(0)">
-              <circle r="26" fill="#1e293b" stroke="#f59e0b" stroke-width="3" filter="url(#glow)"/>
-              <text y="5" text-anchor="middle" fill="#f59e0b" font-size="18">🧪</text>
-              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">R&D Recipe</text>
-            </g>
-
-            <g id="node-2" transform="translate(150, 120)" class="cursor-pointer" onclick="setStep(1)">
-              <circle r="26" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
-              <text y="5" text-anchor="middle" fill="#cbd5e1" font-size="18">✅</text>
-              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">Approval</text>
-            </g>
-
-            <g id="node-3" transform="translate(250, 120)" class="cursor-pointer" onclick="setStep(2)">
-              <circle r="26" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
-              <text y="5" text-anchor="middle" fill="#cbd5e1" font-size="18">📦</text>
-              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">Store GRN</text>
-            </g>
-
-            <g id="node-4" transform="translate(350, 120)" class="cursor-pointer" onclick="setStep(3)">
-              <circle r="26" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
-              <text y="5" text-anchor="middle" fill="#cbd5e1" font-size="18">💥</text>
-              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">BOM Release</text>
-            </g>
-
-            <g id="node-5" transform="translate(450, 120)" class="cursor-pointer" onclick="setStep(4)">
-              <circle r="26" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
-              <text y="5" text-anchor="middle" fill="#cbd5e1" font-size="18">🏭</text>
-              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">WIP Floor</text>
-            </g>
-
-            <g id="node-6" transform="translate(550, 120)" class="cursor-pointer" onclick="setStep(5)">
-              <circle r="26" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
-              <text y="5" text-anchor="middle" fill="#cbd5e1" font-size="18">📊</text>
-              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">Variance Engine</text>
-            </g>
-
-            <g id="node-7" transform="translate(640, 120)" class="cursor-pointer" onclick="setStep(6)">
-              <circle r="26" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
-              <text y="5" text-anchor="middle" fill="#cbd5e1" font-size="18">🏷️</text>
-              <text y="44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">Sales Invoice</text>
-            </g>
+            <!-- Drawn from the STEPS data below, so the diagram cannot
+                 drift out of step with the walkthrough beside it. -->
+            <g id="pipelineLinks"></g>
+            <g id="pipelineNodes"></g>
 
             <!-- MOVING MATERIAL PARTICLE CARRIER -->
-            <circle id="movingCarrier" r="9" fill="#f59e0b" filter="url(#glow)">
+            <!-- cx/cy must exist for anime to interpolate them; without
+                 them the carrier never leaves the origin -->
+            <circle id="movingCarrier" cx="62" cy="66" r="9" fill="#f59e0b" filter="url(#glow)">
               <animate attributeName="opacity" values="0.7;1;0.7" dur="1s" repeatCount="indefinite"/>
             </circle>
           </svg>
@@ -282,7 +235,7 @@
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
               Live Pipeline Status: <span id="pipelineStatusText" class="text-amber-400 font-bold">R&D Recipe Formulation</span>
             </span>
-            <span class="text-slate-500" id="stepCounterLabel">Step 1 of 8</span>
+            <span class="text-slate-500" id="stepCounterLabel">Step 1 of 12</span>
           </div>
         </div>
 
@@ -292,6 +245,10 @@
             <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-1">What Happens at this Step</h3>
             <p id="stepDescription" class="text-slate-200 text-sm leading-relaxed">
               Description text will appear here...
+            </p>
+            <p class="text-xs text-slate-400 mt-2 flex items-start gap-1.5">
+              <i class="fa-solid fa-location-arrow text-amber-400 mt-0.5 text-[10px]"></i>
+              <span>See it in the app: <span id="stepWhere" class="text-amber-300 font-semibold"></span></span>
             </p>
           </div>
 
@@ -370,9 +327,9 @@
 
         <!-- QUICK ACCESS LINKS -->
         <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-          <span>Target ERP Server: <strong class="text-white font-mono">localhost:5000</strong></span>
-          <a href="http://localhost:5173" target="_blank" class="text-amber-400 hover:underline flex items-center gap-1 font-semibold">
-            Open Live ERP <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+          <span>Every figure below is the one this system actually posts.</span>
+          <a href="/" class="text-amber-400 hover:underline flex items-center gap-1 font-semibold">
+            Back to the ERP <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
           </a>
         </div>
       </div>
@@ -388,12 +345,15 @@
           <i class="fa-solid fa-chart-pie"></i> 5-Factor Variance Engine
         </div>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Standard costing freezes the BOM. Completion quantifies Material Usage, Price, Labour, Overhead, and Yield variances.
+          The standard is frozen onto the order when it is planned. On completion the difference is
+          split five ways, so "it cost more" becomes a specific, answerable question. On the demo run
+          the five add to Rs. 33,628.99 - exactly what work in process held above standard.
         </p>
         <div class="text-[11px] font-mono text-slate-400 bg-slate-950 p-2.5 rounded-lg border border-slate-800 space-y-1">
-          <div>• Usage: (Actual Qty − Std Qty) × Std Rate</div>
-          <div>• Price: (Actual Rate − Std Rate) × Actual Qty</div>
-          <div>• Yield: (Planned − Good) × Std Unit Cost</div>
+          <div>• Usage: (actualQty − stdQty) × stdRate</div>
+          <div>• Price: (actualRate − stdRate) × actualQty</div>
+          <div>• Yield: (planned − good) × stdUnitCost</div>
+          <div>• Labour and overhead: actual absorbed − standard</div>
         </div>
       </div>
 
@@ -403,7 +363,9 @@
           <i class="fa-solid fa-cubes-stacked"></i> Moving Average Inventory
         </div>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Inbound receipts re-average the rate. Outbound issues take the current moving average so remaining stock value stays true.
+          Every receipt re-averages the rate; every issue leaves at the current average. Because issues
+          leave at average and finished goods are capitalised at standard, the gap between the two is
+          not lost - it is what the variance accounts report.
         </p>
         <div class="text-[11px] font-mono text-slate-400 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
           New Rate = (Old Value + Inbound Value) / (Old Qty + Inbound Qty)
@@ -413,13 +375,17 @@
       <!-- CARD 3: SEGREGATION OF DUTIES -->
       <div class="glass-panel rounded-xl p-5 space-y-3">
         <div class="flex items-center gap-2 text-blue-400 font-bold text-sm">
-          <i class="fa-solid fa-user-lock"></i> Segregation of Duties (SoD)
+          <i class="fa-solid fa-user-lock"></i> Segregation of duties
         </div>
         <p class="text-xs text-slate-300 leading-relaxed">
-          7 distinct roles across R&D, Procurement, Warehouse, Production, Sales, and Finance prevent unauthorized single-user actions.
+          Fifteen roles across R&amp;D, procurement, warehouse, production, sales and finance. What a
+          person may do is decided by the action, not the department, and the API checks it on every
+          request - hiding a button is never the only control.
         </p>
-        <div class="text-[11px] font-mono text-slate-400 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-          QA Submits Recipe ➔ Finance Approves ➔ Prod Issues ➔ Controller Closes
+        <div class="text-[11px] font-mono text-slate-400 bg-slate-950 p-2.5 rounded-lg border border-slate-800 space-y-1">
+          <div>• The author of a recipe cannot approve it</div>
+          <div>• The buyer who raises an order cannot approve it</div>
+          <div>• Approval is capped by value, per role</div>
         </div>
       </div>
 
@@ -434,153 +400,334 @@
 
   <!-- SCRIPT ENGINE -->
   <script>
+    /*
+     * The twelve steps a batch of biscuits actually travels through in this
+     * system, in order, with the figures the seeded demo company really
+     * posts. Every amount below can be found on screen in the running app -
+     * if one of them ever stops matching, this walkthrough is wrong, not the
+     * ledger.
+     */
     const STEPS = [
       {
         id: 1,
-        title: "1. Recipe & Formula Formulation (R&D)",
+        icon: "\u{1F9EA}",
+        node: "Formula",
+        title: "1. Write the formula",
         role: "QA / R&D Officer",
         roleColor: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-        description: "The QA/R&D officer formulates a recipe (e.g. Marie Biscuit 100g for 1,000 kg batch size). Standard raw ingredients (Flour, Sugar, Palm Oil) are specified along with expected line wastage % and good unit yield %.",
-        rule: "Recipe is submitted in DRAFT mode and moves to PENDING_APPROVAL. Segregation of Duties prohibits the QA author from approving their own formula.",
-        formula: "goodUnits = (baseBatchQty × yieldPercent) / 100",
-        journalCode: "NO-JE (DRAFT)",
+        description:
+          "R&D writes REC-00001, Chocolate Cream Biscuit: a 1,000-unit batch of eight raw materials and two packaging items, each line carrying its own wastage allowance. 98% of the batch survives as saleable product, so a batch yields 980 good units and the batch cost is spread over those 980, not over 1,000. That is what makes wastage cost money. The version is saved as a DRAFT and submitted for approval.",
+        rule: "A recipe is version-controlled. It is submitted, never simply saved as final, and the person who writes it cannot be the person who approves it.",
+        formula: "goodUnits = baseBatchQty × yieldPercent ÷ 100   →   1,000 × 98 ÷ 100 = 980",
+        where: "Recipes → REC-00001 → Open cost sheet",
+        journalCode: "no posting",
         journals: [
-          { acc: "Recipe Status", dr: "PENDING_APPROVAL", cr: "-" },
-          { acc: "Manufacturing Cost / Unit", dr: "Rs. 42.50 (Est)", cr: "-" }
+          { acc: "Recipe REC-00001 v1.0", dr: "DRAFT → PENDING_APPROVAL", cr: "-" },
+          { acc: "Material cost per good unit", dr: "Rs. 6.9704", cr: "-" }
         ],
-        assertionTitle: "Recipe Unapproved Locking",
-        assertionDetail: "Unapproved recipes cannot be selected for production orders. Stock is untouched.",
-        cx: 60
+        assertionTitle: "A formula on its own moves nothing",
+        assertionDetail: "Writing or costing a recipe touches no stock and posts no journal entry. Nothing has been bought, made or sold yet."
       },
       {
         id: 2,
-        title: "2. Recipe Economics & Approval (Finance)",
-        role: "Finance Manager / Controller",
+        icon: "✅",
+        node: "Approval",
+        title: "2. Approve the formula",
+        role: "Finance Manager",
         roleColor: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-        description: "Finance reviews unit margins, raw material standard rates, labour, and factory overhead allocations. Upon sign-off, the recipe status changes to APPROVED.",
-        rule: "Approving a new recipe version automatically archives superseded versions. Approved recipes are locked and cannot be edited.",
-        formula: "MfgCostPerUnit = MatCostPerUnit + Labour + FactoryOverhead",
-        journalCode: "REC-APPROVED",
+        description:
+          "Finance checks the cost build-up and approves v1.0. Material is Rs. 6.9704 per good unit; direct labour of Rs. 0.32 and factory overhead of Rs. 0.68 are absorbed on top, giving a manufacturing cost of Rs. 7.9704. Administration (Rs. 0.25) and marketing (Rs. 0.30) are period costs - shown for pricing, but deliberately kept out of the number that values stock.",
+        rule: "Only an APPROVED recipe can be used in production. Approving a new version archives the one it supersedes, and an approved version is locked against editing - to change it you raise the next version.",
+        formula: "manufacturingCost = material + labour + factoryOverhead   →   6.9704 + 0.32 + 0.68 = 7.9704",
+        where: "Recipes → the pending row → the ✓ button",
+        journalCode: "no posting",
         journals: [
-          { acc: "Recipe Status", dr: "APPROVED (v1.0)", cr: "-" },
-          { acc: "Superseded Version", dr: "ARCHIVED", cr: "-" }
+          { acc: "Recipe REC-00001 v1.0", dr: "APPROVED", cr: "-" },
+          { acc: "Manufacturing cost / unit", dr: "Rs. 7.9704", cr: "-" },
+          { acc: "Full management cost / unit", dr: "Rs. 8.5204", cr: "-" }
         ],
-        assertionTitle: "Segregation of Duties Enforced",
-        assertionDetail: "The API rejects approval attempts if the approver is the same user who submitted the version.",
-        cx: 150
+        assertionTitle: "Segregation of duties",
+        assertionDetail: "The API refuses an approval from the same account that submitted the version - it answers 403, not a warning. The QA officer holds no recipe.approve permission at all."
       },
       {
         id: 3,
-        title: "3. Goods Receipt Note (Warehouse / Store)",
-        role: "Warehouse Officer / Storekeeper",
+        icon: "\u{1F4E9}",
+        node: "RFQ",
+        title: "3. Ask suppliers to quote",
+        role: "Procurement Officer",
         roleColor: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-        description: "Raw materials arrive from suppliers against a Purchase Order. The storekeeper creates a Goods Receipt Note (GRN), moving physical inventory into the Raw Material Store.",
-        rule: "Inventory moving-average rate is updated immediately. Liability sits in GRNI (Goods Received Not Invoiced) until supplier invoice matching.",
-        formula: "NewAvgRate = (OldValue + InboundVal) / (OldQty + InboundQty)",
-        journalCode: "GRN-2026-0042",
+        description:
+          "Before buying, procurement raises RFQ-00001 for the two bulk ingredients and invites three suppliers. Two come back with a rate. Each bid is priced as the quoted rate times the quantity asked for, so bids are compared on total spend rather than on unit price alone. Awarding the cheapest raises a draft purchase order automatically - the buyer never retypes the winning price.",
+        rule: "A quotation is attributed to a named supplier and kept, so the file shows who was asked, who answered, at what price, and why the winner won.",
+        formula: "bidTotal = Σ (quotedRate × lineQty)",
+        where: "Procurement → Requests for Quotation",
+        journalCode: "no posting",
         journals: [
-          { acc: "1201 - Raw Material Inventory", dr: "450,000.00", cr: "0.00" },
-          { acc: "2103 - Goods Received Not Invoiced (GRNI)", dr: "0.00", cr: "450,000.00" }
+          { acc: "RFQ-00001", dr: "OPEN → AWARDED", cr: "-" },
+          { acc: "Bids received", dr: "2 of 3 suppliers", cr: "-" },
+          { acc: "Raised on award", dr: "draft purchase order", cr: "-" }
         ],
-        assertionTitle: "Stock-to-GL Balance Guaranteed",
-        assertionDetail: "Stock valuation ledger increase matches the debit to Account 1201 to the exact cent.",
-        cx: 250
+        assertionTitle: "Comparison before commitment",
+        assertionDetail: "An RFQ creates no obligation and no posting. It exists so that the purchase order which follows can be justified."
       },
       {
         id: 4,
-        title: "4. Production Order & BOM Explosion",
-        role: "Production Manager",
-        roleColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-        description: "Production Manager plans a batch run (e.g. 50,000 good packs). The system explodes the approved recipe linearly to freeze standard material quantities and standard unit costs.",
-        rule: "Only APPROVED recipes can be exploded. Creates a released production order ready for material issuance.",
-        formula: "ScaleFactor = PlannedQty / GoodUnitsPerBatch",
-        journalCode: "ORD-RELEASED",
+        icon: "\u{1F4DD}",
+        node: "PO",
+        title: "4. Raise and approve the purchase order",
+        role: "Procurement Officer → Manager",
+        roleColor: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+        description:
+          "PO-P-00001 goes to Punjab Flour Mills for Rs. 452,800 of material plus Rs. 81,504 sales tax - Rs. 534,304 in total. The officer who raises it cannot approve it; it escalates to the Procurement Manager, whose approval limit is Rs. 1,000,000. Above that it would escalate again.",
+        rule: "Approval is limited by value, per role. A purchase order is a commitment to a supplier, not an accounting event - the books stay untouched until something physically arrives.",
+        formula: "grandTotal = subtotal + salesTax   →   452,800 + 81,504 = 534,304",
+        where: "Procurement → Purchase Orders → Submit, then Approve",
+        journalCode: "no posting",
         journals: [
-          { acc: "Order Status", dr: "RELEASED", cr: "-" },
-          { acc: "Planned Std Material Cost", dr: "Rs. 1,600,000.00", cr: "-" }
+          { acc: "PO-P-00001", dr: "DRAFT → PENDING_APPROVAL → APPROVED", cr: "-" },
+          { acc: "Committed spend", dr: "Rs. 534,304.00", cr: "-" }
         ],
-        assertionTitle: "Standard Cost Frozen",
-        assertionDetail: "Order standard cost is locked at creation time to calculate true variance upon completion.",
-        cx: 350
+        assertionTitle: "A commitment is not an expense",
+        assertionDetail: "Approving a purchase order posts nothing. Try to approve your own and the API answers: you raised this order, so someone else must approve it."
       },
       {
         id: 5,
-        title: "5. Shop Floor Material Issuance (WIP)",
-        role: "Warehouse / Production Officer",
+        icon: "\u{1F4E6}",
+        node: "Goods in",
+        title: "5. Receive the goods",
+        role: "Warehouse Officer",
         roleColor: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-        description: "Warehouse issues raw ingredients to the baking floor. Materials leave Raw Material Store and enter Work in Process (WIP).",
-        rule: "System checks stock availability (refuses shortage). Issued stock is valued at current moving-average rate.",
-        formula: "IssuedValue = ActualQtyIssued × MovingAvgRate",
-        journalCode: "JE-ISSUE-881",
+        description:
+          "The delivery arrives and the storekeeper books GRN-00001 for Rs. 445,100 against the order, recording what was accepted and what failed QC. Stock rises and its moving-average rate is recalculated on the spot. The supplier has not invoiced yet, so the liability is parked in Goods Received Not Invoiced rather than in trade payables.",
+        rule: "A receipt must be against a purchase order. Received quantity cannot exceed what was ordered, and the order moves to PARTIALLY_RECEIVED or fully received accordingly.",
+        formula: "newAvgRate = (oldValue + inboundValue) ÷ (oldQty + inboundQty)",
+        where: "Procurement → Purchase Orders → Receive Goods",
+        journalCode: "JE-00006",
         journals: [
-          { acc: "1202 - Work in Process (WIP)", dr: "1,615,000.00", cr: "0.00" },
-          { acc: "1201 - Raw Material Inventory", dr: "0.00", cr: "1,615,000.00" }
+          { acc: "1201 · Raw Material Inventory", dr: "445,100.00", cr: "0.00" },
+          { acc: "2103 · Goods Received Not Invoiced", dr: "0.00", cr: "445,100.00" }
         ],
-        assertionTitle: "Shortage Prevention Control",
-        assertionDetail: "If stock is insufficient, the issue API aborts before any stock or ledger movement posts.",
-        cx: 450
+        assertionTitle: "The stock ledger agrees with the general ledger",
+        assertionDetail: "The rise in stock valuation equals the debit to account 1201 to the paisa. Goods held but not yet invoiced sit in 2103, so the liability is visible before the bill turns up."
       },
       {
         id: 6,
-        title: "6. Production Completion & Variance Engine",
-        role: "Production Officer & Costing Engine",
-        roleColor: "bg-rose-500/20 text-rose-400 border-rose-500/30",
-        description: "Baking completes. Floor inputs actual good output (49,200 packs), scrap (400 packs), actual labour, and overhead. The Costing Engine calculates all 5 variances.",
-        rule: "Finished goods capitalized at standard cost. WIP nets to zero. Variances & yield loss absorb the delta.",
-        formula: "Variance = Usage + Price + Labour + Overhead + YieldLoss",
-        journalCode: "JE-PROD-CMPL",
+        icon: "\u{1F50D}",
+        node: "3-way match",
+        title: "6. Match the supplier invoice",
+        role: "Accounts Payable",
+        roleColor: "bg-cyan-500/20 text-cyan-400 border-cyan-400/30",
+        description:
+          "The supplier's bill PINV-00001 arrives. The system reconciles three documents - what was ordered, what was received, and what is being charged - and only then converts the parked liability into a real payable. Sales tax of Rs. 80,118 is booked as a recoverable asset, not as cost, so it never inflates the value of the biscuits.",
+        rule: "Input tax is recoverable and is never capitalised into inventory. Goods Received Not Invoiced clears to nil once the bill is matched; anything left in it is goods held that nobody has billed for.",
+        formula: "payable = matchedGoodsValue + recoverableInputTax   →   445,100 + 80,118 = 525,218",
+        where: "Sales & Purchases → Purchases, and Procurement → 3-way match",
+        journalCode: "JE-00007",
         journals: [
-          { acc: "1203 - Finished Goods Inventory", dr: "2,066,400.00", cr: "0.00" },
-          { acc: "5201 - Material Usage Variance", dr: "15,000.00", cr: "0.00" },
-          { acc: "5202 - Material Price Variance", dr: "8,500.00", cr: "0.00" },
-          { acc: "5205 - Yield Loss Variance", dr: "33,600.00", cr: "0.00" },
-          { acc: "1202 - Work in Process (WIP)", dr: "0.00", cr: "2,123,500.00" }
+          { acc: "2103 · Goods Received Not Invoiced", dr: "445,100.00", cr: "0.00" },
+          { acc: "1301 · Input Sales Tax (recoverable)", dr: "80,118.00", cr: "0.00" },
+          { acc: "2101 · Trade Payables", dr: "0.00", cr: "525,218.00" }
         ],
-        assertionTitle: "WIP Net to Zero Assertion",
-        assertionDetail: "WIP balance for completed order equals exactly 0.00. Debits equal credits.",
-        cx: 550
+        assertionTitle: "Three documents must agree",
+        assertionDetail: "Order, receipt and invoice are reconciled before a payable exists. GRNI nets to zero once matched, which is the proof that nothing received has gone unbilled."
       },
       {
         id: 7,
-        title: "7. Sales Invoicing & Revenue / COGS",
-        role: "Sales Officer",
-        roleColor: "bg-cyan-500/20 text-cyan-400 border-cyan-400/30",
-        description: "Customer invoice is generated for dispatch. The invoice records Gross Sales, 18% Sales Tax liability, and Cost of Goods Sold (COGS) based on finished goods moving average.",
-        rule: "Output tax is kept out of revenue. COGS is recognized at invoice posting.",
-        formula: "GrossProfit = NetRevenue − COGS",
-        journalCode: "INV-2026-091",
+        icon: "\u{1F4A5}",
+        node: "Plan run",
+        title: "7. Plan the production run",
+        role: "Production Manager",
+        roleColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+        description:
+          "Order PO-00001 plans 100,000 units. The approved recipe is scaled linearly - 100,000 ÷ 980 good units per batch is a factor of 102.04 - and the resulting quantities and rates are frozen onto the order as its standard. Rs. 697,040.35 of material is what this run ought to consume. Freezing it now is the whole point: it is the yardstick everything is measured against later.",
+        rule: "Only an approved recipe can be scaled onto an order. The standard is captured at creation and never moves afterwards, even if material prices change mid-run.",
+        formula: "scaleFactor = plannedQty ÷ goodUnitsPerBatch   →   100,000 ÷ 980 = 102.0408",
+        where: "Production → New order",
+        journalCode: "no posting",
         journals: [
-          { acc: "1101 - Accounts Receivable", dr: "3,540,000.00", cr: "0.00" },
-          { acc: "5001 - Cost of Goods Sold (COGS)", dr: "2,100,000.00", cr: "0.00" },
-          { acc: "4001 - Sales Revenue", dr: "0.00", cr: "3,000,000.00" },
-          { acc: "2201 - Output Sales Tax Liability", dr: "0.00", cr: "540,000.00" },
-          { acc: "1203 - Finished Goods Inventory", dr: "0.00", cr: "2,100,000.00" }
+          { acc: "PO-00001", dr: "DRAFT → RELEASED", cr: "-" },
+          { acc: "Standard material cost", dr: "Rs. 697,040.35", cr: "-" },
+          { acc: "Standard cost / unit", dr: "Rs. 7.9704", cr: "-" }
         ],
-        assertionTitle: "Tax & Revenue Separation",
-        assertionDetail: "18% Sales Tax is isolated into Account 2201 and excluded from revenue.",
-        cx: 640
+        assertionTitle: "The yardstick is frozen first",
+        assertionDetail: "Planning posts nothing. It fixes what the run should cost, so that what it did cost can be compared against something that cannot move."
       },
       {
         id: 8,
-        title: "8. Tax Settlement & Month-End Close",
+        icon: "\u{1F3ED}",
+        node: "Issue",
+        title: "8. Issue material to the floor",
+        role: "Warehouse Officer",
+        roleColor: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+        description:
+          "The store issues what the floor actually takes. Stock leaves raw materials and enters work in process at the current moving-average rate - Rs. 713,013.39 against a standard of Rs. 697,040.35. The gap is real and is not swept up here; it is held until completion and then split into how much was over-used and how much was over-paid for.",
+        rule: "The issue is checked against stock on hand first. If any line is short, the whole issue is refused before a single movement or journal line is written - never half-posted.",
+        formula: "issuedValue = actualQty × movingAvgRate",
+        where: "Production → PO-00001 → Issue material",
+        journalCode: "JE-00003",
+        journals: [
+          { acc: "1202 · Work in Process", dr: "713,013.39", cr: "0.00" },
+          { acc: "1201 · Raw Material Inventory", dr: "0.00", cr: "713,013.39" }
+        ],
+        assertionTitle: "All of it, or none of it",
+        assertionDetail: "A shortage aborts the request outright - the demo run reports all ten shortages at once and posts nothing. Stock cannot go negative and the ledger cannot be left half-written."
+      },
+      {
+        id: 9,
+        icon: "⚙️",
+        node: "Conversion",
+        title: "9. Absorb labour and overhead",
+        role: "Costing engine",
+        roleColor: "bg-rose-500/20 text-rose-400 border-rose-500/30",
+        description:
+          "Material alone does not make a biscuit. The shift's actual wages of Rs. 34,200 and factory overhead of Rs. 71,500 are absorbed into work in process - Rs. 105,700 in total, against a standard of Rs. 100,000 for this volume. Conversion cost is now inside the run, so what comes out of the oven carries its full manufacturing cost rather than only its ingredients.",
+        rule: "Labour and factory overhead are inventoriable - they belong in the value of stock. Administration and marketing are not, and never enter work in process.",
+        formula: "standardConversion = plannedQty × (labourRate + overheadRate)   →   100,000 × (0.32 + 0.68) = 100,000",
+        where: "Accounts / GL → Journal entries → JE-00004",
+        journalCode: "JE-00004",
+        journals: [
+          { acc: "1202 · Work in Process", dr: "105,700.00", cr: "0.00" },
+          { acc: "2102 · Accrued Payroll", dr: "0.00", cr: "34,200.00" },
+          { acc: "5102 · Factory Overhead", dr: "0.00", cr: "71,500.00" }
+        ],
+        assertionTitle: "Only factory cost is inventoriable",
+        assertionDetail: "Rs. 5,700 more conversion cost was absorbed than the standard allows. That difference is carried forward and reported as the labour and overhead variances, not quietly buried in stock."
+      },
+      {
+        id: 10,
+        icon: "\u{1F4CA}",
+        node: "Variance",
+        title: "10. Complete the run, and explain the difference",
+        role: "Production Officer",
+        roleColor: "bg-rose-500/20 text-rose-400 border-rose-500/30",
+        description:
+          "98,500 good units come off the line against 100,000 planned - a yield of 98.5%. Finished goods are capitalised at the frozen standard, 98,500 × Rs. 7.9704 = Rs. 785,084.40, and everything work in process holds above that is pushed out into five named variance accounts. The question is never merely whether it cost more, but which of five things went wrong: too much material, material too dear, too much labour, too much overhead, or too few good units.",
+        rule: "Stock is valued at standard, never at whatever this particular run happened to cost. Work in process must net to exactly zero once an order completes.",
+        formula: "totalVariance = usage + price + labour + overhead + yieldLoss   →   9,663.82 + 6,309.22 + 2,200.00 + 3,500.00 + 11,955.95 = 33,628.99",
+        where: "Production → PO-00001, and the Costing screen",
+        journalCode: "JE-00005",
+        journals: [
+          { acc: "1203 · Finished Goods Inventory", dr: "785,084.40", cr: "0.00" },
+          { acc: "5201 · Material Usage Variance", dr: "9,663.82", cr: "0.00" },
+          { acc: "5202 · Material Price Variance", dr: "6,309.22", cr: "0.00" },
+          { acc: "5203 · Direct Labour Variance", dr: "2,200.00", cr: "0.00" },
+          { acc: "5204 · Factory Overhead Variance", dr: "3,500.00", cr: "0.00" },
+          { acc: "5205 · Yield Loss / Normal Scrap", dr: "11,955.95", cr: "0.00" },
+          { acc: "1202 · Work in Process", dr: "0.00", cr: "818,713.39" }
+        ],
+        assertionTitle: "Work in process nets to zero",
+        assertionDetail: "713,013.39 of material plus 105,700.00 of conversion went in; 785,084.40 of finished goods plus 33,628.99 of variances came out. The account holds nothing afterwards, which is the proof that every rupee was accounted for."
+      },
+      {
+        id: 11,
+        icon: "\u{1F3F7}️",
+        node: "Sell",
+        title: "11. Invoice the customer",
+        role: "Sales Officer",
+        roleColor: "bg-cyan-500/20 text-cyan-400 border-cyan-400/30",
+        description:
+          "INV-00001 sells 42,000 units to Metro Cash and Carry at Rs. 10.50 - Rs. 441,000 plus Rs. 79,380 of sales tax. Posting it does two things at once: it books the sale, and it relieves finished goods at what those biscuits actually cost to make, Rs. 334,756.80. Gross profit is therefore known on the invoice itself - Rs. 106,243.20, a margin of 24.1% - rather than being worked out at the month end.",
+        rule: "Output tax is a liability collected on the government's behalf and is kept out of revenue. Cost of goods sold is recognised in the same entry as the sale, never later.",
+        formula: "grossProfit = revenue − cogs   →   441,000.00 − 334,756.80 = 106,243.20  (24.1%)",
+        where: "Sales & Purchases → Sales → the eye icon on INV-00001",
+        journalCode: "JE-00009",
+        journals: [
+          { acc: "1101 · Trade Receivables", dr: "520,380.00", cr: "0.00" },
+          { acc: "5001 · Cost of Goods Sold", dr: "334,756.80", cr: "0.00" },
+          { acc: "4001 · Sales Revenue", dr: "0.00", cr: "441,000.00" },
+          { acc: "2201 · Output Sales Tax Payable", dr: "0.00", cr: "79,380.00" },
+          { acc: "1203 · Finished Goods Inventory", dr: "0.00", cr: "334,756.80" }
+        ],
+        assertionTitle: "Tax is not revenue",
+        assertionDetail: "The Rs. 79,380 sits in account 2201 as money owed to the revenue authority. Revenue is Rs. 441,000, and the margin reported on the dashboard is calculated on that figure alone."
+      },
+      {
+        id: 12,
+        icon: "\u{1F512}",
+        node: "Close",
+        title: "12. Settle the tax and close the month",
         role: "Financial Controller",
         roleColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-        description: "Controller runs the close checklist, nets Input Tax against Output Tax, verifies trial balance balance, and locks the accounting period (FiscalPeriod CLOSED).",
-        rule: "Closed accounting periods reject any transactions or adjustments dated inside them.",
-        formula: "NetTaxPayable = OutputTax Liability − InputTax Asset",
-        journalCode: "PERIOD-CLOSED",
+        description:
+          "At the month end the controller nets what was collected on sales against what was paid on purchases: Rs. 120,582 of output tax against Rs. 121,698 of input tax leaves Rs. 1,116 recoverable rather than payable. The trial balance is confirmed to balance - Rs. 6,149,730 on each side - and the period is locked.",
+        rule: "A closed period rejects any entry dated inside it, on every route, including back-dated adjustments. Reopening is itself a permission, held only by the controller.",
+        formula: "netTaxPosition = outputTax − inputTax   →   120,582 − 121,698 = −1,116  (refundable)",
+        where: "Tax, and Accounts / GL → Trial balance",
+        journalCode: "period close",
         journals: [
-          { acc: "Trial Balance Status", dr: "BALANCED (0.00 Diff)", cr: "-" },
-          { acc: "Fiscal Period", dr: "2026-08 (CLOSED)", cr: "-" }
+          { acc: "2201 · Output tax collected", dr: "-", cr: "Rs. 120,582.00" },
+          { acc: "1301 · Input tax recoverable", dr: "Rs. 121,698.00", cr: "-" },
+          { acc: "Net position", dr: "Rs. 1,116.00 refundable", cr: "-" },
+          { acc: "Trial balance", dr: "Rs. 6,149,730.00", cr: "Rs. 6,149,730.00" }
         ],
-        assertionTitle: "Period Lock Integrity",
-        assertionDetail: "assertPeriodOpen middleware blocks back-dated entries into closed periods across all routers.",
-        cx: 640
+        assertionTitle: "The books balance, then they lock",
+        assertionDetail: "Debits equal credits to the paisa before anything closes. Afterwards the period is sealed: assertPeriodOpen refuses back-dated entries across every router, so a closed month cannot quietly change."
       }
     ];
 
     let currentStep = 0;
     let autoPlayInterval = null;
+
+    /*
+     * Twelve stages do not fit across one row, so they are laid out as two,
+     * the second running back the other way. That keeps the whole journey on
+     * screen at once and makes the return leg - selling and closing - read as
+     * a continuation rather than a second diagram.
+     */
+    const NODES_PER_ROW = 6;
+    const NODE_X0 = 62;
+    const NODE_DX = 115;
+    const ROW_Y = [66, 182];
+
+    function nodePos(idx) {
+      const row = Math.floor(idx / NODES_PER_ROW);
+      const col = idx % NODES_PER_ROW;
+      const x = row % 2 === 0
+        ? NODE_X0 + col * NODE_DX
+        : NODE_X0 + (NODES_PER_ROW - 1 - col) * NODE_DX;
+      return { x, y: ROW_Y[row] ?? ROW_Y[ROW_Y.length - 1] };
+    }
+
+    function renderPipeline() {
+      const links = document.getElementById('pipelineLinks');
+      const nodes = document.getElementById('pipelineNodes');
+      links.innerHTML = '';
+      nodes.innerHTML = '';
+      const ns = 'http://www.w3.org/2000/svg';
+
+      for (let i = 0; i < STEPS.length - 1; i += 1) {
+        const from = nodePos(i);
+        const to = nodePos(i + 1);
+        const path = document.createElementNS(ns, 'path');
+        path.setAttribute(
+          'd',
+          from.y === to.y
+            ? `M ${from.x} ${from.y} L ${to.x} ${to.y}`
+            : `M ${from.x} ${from.y} C ${from.x + 62} ${from.y}, ${to.x + 62} ${to.y}, ${to.x} ${to.y}`
+        );
+        path.setAttribute('stroke', '#334155');
+        path.setAttribute('stroke-width', '4');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('fill', 'none');
+        links.appendChild(path);
+      }
+
+      STEPS.forEach((step, idx) => {
+        const { x, y } = nodePos(idx);
+        const lastRow = Math.floor(idx / NODES_PER_ROW) === ROW_Y.length - 1;
+        const g = document.createElementNS(ns, 'g');
+        g.setAttribute('id', `node-${step.id}`);
+        g.setAttribute('transform', `translate(${x}, ${y})`);
+        g.setAttribute('class', 'cursor-pointer');
+        g.addEventListener('click', () => setStep(idx));
+        g.innerHTML = `
+          <circle r="22" fill="#0f172a" stroke="#64748b" stroke-width="2"/>
+          <text y="5" text-anchor="middle" fill="#e2e8f0" font-size="15">${step.icon}</text>
+          <text y="${lastRow ? -32 : 38}" text-anchor="middle" fill="#94a3b8" font-size="9" font-weight="600">${step.node}</text>
+        `;
+        nodes.appendChild(g);
+      });
+    }
 
     function renderStepButtons() {
       const container = document.getElementById('stepButtonsContainer');
@@ -604,8 +751,12 @@
       document.getElementById('roleBadge').className = `px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1.5 ${data.roleColor}`;
       document.getElementById('roleBadge').innerHTML = `<i class="fa-solid fa-user-gear text-[10px]"></i> ${data.role}`;
 
+      /*
+       * The track it fills runs from left-8 to right-8, so a plain percentage
+       * of the full width overshoots the last step by that right inset.
+       */
       const percent = (idx / (STEPS.length - 1)) * 100;
-      document.getElementById('progressLine').style.width = `${percent}%`;
+      document.getElementById('progressLine').style.width = `calc((100% - 4rem) * ${percent} / 100)`;
 
       const btns = document.querySelectorAll('.step-btn');
       btns.forEach((b, i) => {
@@ -613,35 +764,30 @@
         else b.classList.remove('active');
       });
 
-      document.getElementById('pipelineStatusText').innerText = data.title;
+      // the counter to the right of this already gives the position
+      document.getElementById('pipelineStatusText').innerText = `${data.node} — ${data.role}`;
       document.getElementById('stepCounterLabel').innerText = `Step ${idx + 1} of ${STEPS.length}`;
 
-      const carrier = document.getElementById('movingCarrier');
+      const here = nodePos(idx);
       anime({
-        targets: carrier,
-        cx: data.cx,
-        cy: 120,
+        targets: document.getElementById('movingCarrier'),
+        cx: here.x,
+        cy: here.y,
         duration: 800,
         easing: 'spring(1, 80, 12, 0)'
       });
 
-      for (let i = 1; i <= 7; i++) {
-        const n = document.getElementById(`node-${i}`);
-        if (n) {
-          const circle = n.querySelector('circle');
-          if (i === data.id || (data.id === 8 && i === 7)) {
-            circle.setAttribute('stroke', '#f59e0b');
-            circle.setAttribute('stroke-width', '3');
-            circle.setAttribute('fill', '#1e293b');
-          } else {
-            circle.setAttribute('stroke', '#64748b');
-            circle.setAttribute('stroke-width', '2');
-            circle.setAttribute('fill', '#0f172a');
-          }
-        }
-      }
+      STEPS.forEach((s, i) => {
+        const circle = document.querySelector(`#node-${s.id} circle`);
+        if (!circle) return;
+        const done = i <= idx;
+        circle.setAttribute('stroke', i === idx ? '#f59e0b' : done ? '#10b981' : '#64748b');
+        circle.setAttribute('stroke-width', i === idx ? '3' : '2');
+        circle.setAttribute('fill', i === idx ? '#1e293b' : '#0f172a');
+      });
 
       document.getElementById('stepDescription').innerText = data.description;
+      document.getElementById('stepWhere').innerText = data.where;
       document.getElementById('businessRuleText').innerText = data.rule;
       document.getElementById('formulaText').innerText = data.formula;
 
@@ -656,8 +802,10 @@
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-900/50 transition";
         
-        const drNum = parseFloat(j.dr.replace(/[^0-9.-]+/g,"")) || 0;
-        const crNum = parseFloat(j.cr.replace(/[^0-9.-]+/g,"")) || 0;
+        const amount = (v) =>
+          /^[\d,]+\.\d{2}$/.test(String(v).trim()) ? parseFloat(String(v).replace(/,/g, '')) : 0;
+        const drNum = amount(j.dr);
+        const crNum = amount(j.cr);
         totalDr += drNum;
         totalCr += crNum;
 
@@ -669,8 +817,15 @@
         tbody.appendChild(tr);
       });
 
-      document.getElementById('totalDebitCell').innerText = totalDr > 0 ? totalDr.toLocaleString('en-PK', {minimumFractionDigits: 2}) : "0.00";
-      document.getElementById('totalCreditCell').innerText = totalCr > 0 ? totalCr.toLocaleString('en-PK', {minimumFractionDigits: 2}) : "0.00";
+      const fmt = (v) => v.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const posts = totalDr > 0 || totalCr > 0;
+      document.getElementById('totalDebitCell').innerText = posts ? fmt(totalDr) : '—';
+      document.getElementById('totalCreditCell').innerText = posts ? fmt(totalCr) : '—';
+      // a stage that posts nothing is not "balanced at zero" - say so plainly
+      const balanced = posts && Math.abs(totalDr - totalCr) < 0.005;
+      const colour = !posts ? 'text-slate-500' : balanced ? 'text-emerald-400' : 'text-amber-400';
+      document.getElementById('totalDebitCell').className = `pt-2.5 pb-1 text-right ${colour}`;
+      document.getElementById('totalCreditCell').className = `pt-2.5 pb-1 text-right pr-1 ${colour}`;
 
       document.getElementById('assertionTitle').innerText = data.assertionTitle;
       document.getElementById('assertionDetail').innerText = data.assertionDetail;
@@ -706,6 +861,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      renderPipeline();
       renderStepButtons();
       setStep(0);
     });
