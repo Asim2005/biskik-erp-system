@@ -9,6 +9,7 @@
  *   npm run seed
  */
 import mongoose from 'mongoose';
+import dayjs from 'dayjs';
 import { connectDb } from '../config/db.js';
 import { ROLES } from '../config/roles.js';
 
@@ -37,6 +38,37 @@ import { postMovement } from '../services/inventory.js';
 import { ACC, clearAccountCache, postJournal } from '../services/accounting.js';
 
 const log = (...a) => console.log('  ', ...a);
+
+/* -------------------------------------------------------------------------- */
+/* the demo timeline                                                          */
+/* -------------------------------------------------------------------------- */
+/*
+ * Every dated document below is placed relative to the day the seed runs, and
+ * the whole story - request for quotation, purchase order, goods receipt,
+ * production run, sale - spans about a fortnight.
+ *
+ * Fixed offsets push the early steps into the previous month whenever the
+ * seed is run near the start of one, and a dashboard scoped to "this period"
+ * then opens on zeros: no production this month, no sales tax, no output.
+ * That is accurate and useless.
+ *
+ * So the fortnight is compressed into however much of the current month has
+ * already passed. Order is preserved, and when several steps land on the same
+ * day they are separated by hours so the ledger still reads in sequence.
+ */
+const STORY_SPAN_DAYS = 12;
+const seedRunAt = dayjs();
+const runwayDays = Math.min(STORY_SPAN_DAYS, seedRunAt.date() - 1);
+
+function daysAgo(n) {
+  const scaled = runwayDays === 0 ? 0 : Math.round((n / STORY_SPAN_DAYS) * runwayDays);
+  const when = seedRunAt
+    .subtract(scaled, 'day')
+    .startOf('day')
+    .add(8 + (STORY_SPAN_DAYS - n), 'hour');
+  // never date a document in the future, however tight the runway
+  return (when.isAfter(seedRunAt) ? seedRunAt : when).toDate();
+}
 
 /* -------------------------------------------------------------------------- */
 /* chart of accounts                                                          */
@@ -293,10 +325,10 @@ async function seedRecipe(byCode, users) {
     status: 'APPROVED',
     preparedBy: users.qa._id,
     submittedBy: users.qa._id,
-    submittedAt: new Date(Date.now() - 6 * 864e5),
+    submittedAt: daysAgo(6),
     approvedBy: users.finance._id,
-    approvedAt: new Date(Date.now() - 5 * 864e5),
-    effectiveDate: new Date(Date.now() - 5 * 864e5),
+    approvedAt: daysAgo(5),
+    effectiveDate: daysAgo(5),
     changeNote: 'Initial approved formula',
   });
   applyRecipeCost(recipe);
@@ -373,7 +405,7 @@ async function seedProduction(recipe, byCode, users) {
   const plannedQty = 100000;
   const { lines, scaleFactor, cost } = explodeRecipe(recipe, plannedQty);
   const code = await nextCode('PO');
-  const startedAt = new Date(Date.now() - 3 * 864e5);
+  const startedAt = daysAgo(3);
 
   const order = new ProductionOrder({
     code,
@@ -438,7 +470,7 @@ async function seedProduction(recipe, byCode, users) {
   await order.save();
 
   // --- complete ------------------------------------------------------------
-  const completedAt = new Date(Date.now() - 2 * 864e5);
+  const completedAt = daysAgo(2);
   const goodQty = 98500;
   const rejectQty = 900;
   order.goodQty = goodQty;
@@ -579,8 +611,8 @@ async function seedProcurement(byCode, parties, users) {
   const rfq = await Rfq.create({
     code: await nextCode('RFQ'),
     title: 'Q3 flour and sugar supply',
-    date: new Date(Date.now() - 12 * 864e5),
-    closingDate: new Date(Date.now() - 9 * 864e5),
+    date: daysAgo(12),
+    closingDate: daysAgo(9),
     suppliers: parties.suppliers.map((x) => x._id),
     status: 'OPEN',
     createdBy: users.procurement._id,
@@ -631,8 +663,8 @@ async function seedProcurement(byCode, parties, users) {
     code: await nextCode('PO-P'),
     supplier: supplier._id,
     supplierName: supplier.name,
-    date: new Date(Date.now() - 8 * 864e5),
-    expectedDate: new Date(Date.now() - 5 * 864e5),
+    date: daysAgo(8),
+    expectedDate: daysAgo(5),
     reference: 'Awarded from ' + rfq.code,
     rfq: rfq._id,
     lines: poLines,
@@ -643,9 +675,9 @@ async function seedProcurement(byCode, parties, users) {
     deliveryLocation: 'RM Store',
     createdBy: users.procurement._id,
     submittedBy: users.procurement._id,
-    submittedAt: new Date(Date.now() - 8 * 864e5),
+    submittedAt: daysAgo(8),
     approvedBy: users.procurementManager._id,
-    approvedAt: new Date(Date.now() - 7 * 864e5),
+    approvedAt: daysAgo(7),
   });
 
   rfq.status = 'AWARDED';
@@ -655,7 +687,7 @@ async function seedProcurement(byCode, parties, users) {
   log('purchase order', po.code, 'Rs.', po.grandTotal.toLocaleString(), 'approved by', users.procurementManager.name);
 
   /* ------------------------------ goods receipt -------------------------- */
-  const grnDate = new Date(Date.now() - 6 * 864e5);
+  const grnDate = daysAgo(6);
   const grnLines = po.lines.map((l) => {
     // the flour delivery arrived 40 KG short, and 10 KG was rejected at the gate
     const received = l.materialCode === 'RM-0001' ? 1960 : l.qty;
@@ -741,7 +773,7 @@ async function seedProcurement(byCode, parties, users) {
   log('goods receipt', grn.code, 'Rs.', totalValue.toLocaleString(), 'into GRNI;', po.code, 'is now', po.status);
 
   /* ------------------- supplier invoice, three-way matched --------------- */
-  const invDate = new Date(Date.now() - 4 * 864e5);
+  const invDate = daysAgo(4);
   const invLines = grnLines.map((l) => {
     const amount = round2(l.acceptedQty * l.rate);
     const tax = round2((amount * taxRate) / 100);
@@ -851,7 +883,7 @@ async function seedInvoices(byCode, parties, users) {
     kind: 'PURCHASE',
     party: parties.suppliers[0]._id,
     partyName: parties.suppliers[0].name,
-    date: new Date(Date.now() - 4 * 864e5),
+    date: daysAgo(4),
     reference: 'PFM-INV-8841',
     lines: [
       {
@@ -907,7 +939,7 @@ async function seedInvoices(byCode, parties, users) {
   ];
 
   const salesDocs = [];
-  for (const [customer, qty, rate, daysAgo] of salesSpec) {
+  for (const [customer, qty, rate, agoDays] of salesSpec) {
     const amount = round2(qty * rate);
     const tax = round2((amount * taxRate) / 100);
     const invoice = await Invoice.create({
@@ -915,7 +947,7 @@ async function seedInvoices(byCode, parties, users) {
       kind: 'SALES',
       party: customer._id,
       partyName: customer.name,
-      date: new Date(Date.now() - daysAgo * 864e5),
+      date: daysAgo(agoDays),
       reference: 'DO-' + Math.floor(1000 + Math.random() * 8999),
       lines: [
         {
