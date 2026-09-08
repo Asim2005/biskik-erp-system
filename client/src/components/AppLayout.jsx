@@ -232,6 +232,19 @@ export function AppLayout() {
         <AppShell.Section grow component={ScrollArea} type="scroll">
           {NAV.map((item, i) => {
             if (item.section) {
+              /*
+               * Draw a heading only if the user can reach something beneath
+               * it. Most roles cannot see every group, and an empty
+               * "Commercial" sitting directly on top of "Finance" reads as a
+               * missing menu rather than a hidden one.
+               */
+              const until = NAV.slice(i + 1);
+              const end = until.findIndex((n) => n.section);
+              const members = end === -1 ? until : until.slice(0, end);
+              const visible = members.some((n) =>
+                n.requires ? canAll(n.requires) : can(n.permission)
+              );
+              if (!visible) return null;
               return (
                 <Text
                   key={'s' + i}

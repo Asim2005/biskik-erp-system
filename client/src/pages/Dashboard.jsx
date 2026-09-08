@@ -200,7 +200,21 @@ export default function DashboardPage() {
                         <Table.Td ta="right">{int(o.plannedQty)}</Table.Td>
                         <Table.Td ta="right">{int(o.goodQty)}</Table.Td>
                         <Table.Td ta="right">
-                          <VarianceText value={o.totalVariance} />
+                          {/*
+                            Only a finished order has a variance. A released
+                            order has a standard cost and no actual yet, so
+                            this reported the whole standard as a favourable
+                            saving - a large green number for work that has
+                            not happened. The production list already draws
+                            this distinction.
+                          */}
+                          {o.status === 'COMPLETED' ? (
+                            <VarianceText value={o.totalVariance} />
+                          ) : (
+                            <Text size="xs" c="dimmed">
+                              -
+                            </Text>
+                          )}
                         </Table.Td>
                         <Table.Td>
                           <Text size="xs" c="dimmed">
@@ -314,7 +328,7 @@ export default function DashboardPage() {
               style={{ cursor: 'pointer' }}
               onClick={() => navigate('/recipes')}
             >
-              {c.pendingApprovals} recipe version{c.pendingApprovals === 1 ? '' : 's'} need an authorised approval
+              {c.pendingApprovals} recipe version{c.pendingApprovals === 1 ? ' needs' : 's need'} an authorised approval
               before they can be used in production.
             </Alert>
           )}
