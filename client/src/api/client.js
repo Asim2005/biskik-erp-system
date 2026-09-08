@@ -45,7 +45,14 @@ api.interceptors.response.use(
 /** Surfaces an API failure as a toast and returns the message. */
 export function showError(error, title = 'Could not complete that') {
   const message = error?.friendly || error?.message || 'Unexpected error';
-  notifications.show({ color: 'red', title, message, autoClose: 6000 });
+  /*
+   * Guard the heading. React Query calls onError(error, variables, context),
+   * so handing it this function directly puts the mutation's variables - an
+   * id, or the whole form object - where the title belongs, and the toast
+   * ends up headed with a raw ObjectId or "[object Object]".
+   */
+  const heading = typeof title === 'string' && title.trim() ? title : 'Could not complete that';
+  notifications.show({ color: 'red', title: heading, message, autoClose: 6000 });
   return message;
 }
 

@@ -184,7 +184,7 @@ export default function ProcurementPage() {
       invalidate();
       poModalHandlers.close();
     },
-    onError: showError,
+    onError: (e) => showError(e),
   });
 
   const submitPoMutation = useMutation({
@@ -193,7 +193,7 @@ export default function ProcurementPage() {
       showSuccess('Submitted for departmental approval');
       invalidate();
     },
-    onError: showError,
+    onError: (e) => showError(e),
   });
 
   const approvePoMutation = useMutation({
@@ -202,7 +202,7 @@ export default function ProcurementPage() {
       showSuccess('Purchase Order approved');
       invalidate();
     },
-    onError: showError,
+    onError: (e) => showError(e),
   });
 
   const createRfqMutation = useMutation({
@@ -212,7 +212,7 @@ export default function ProcurementPage() {
       invalidate();
       rfqModalHandlers.close();
     },
-    onError: showError,
+    onError: (e) => showError(e),
   });
 
   const recordQuoteMutation = useMutation({
@@ -222,7 +222,7 @@ export default function ProcurementPage() {
       invalidate();
       quoteModalHandlers.close();
     },
-    onError: showError,
+    onError: (e) => showError(e),
   });
 
   const awardRfqMutation = useMutation({
@@ -231,7 +231,7 @@ export default function ProcurementPage() {
       showSuccess(`RFQ awarded! Generated Purchase Order ${res.data.po?.code}`);
       invalidate();
     },
-    onError: showError,
+    onError: (e) => showError(e),
   });
 
   const createGrnMutation = useMutation({
@@ -241,7 +241,7 @@ export default function ProcurementPage() {
       invalidate();
       grnModalHandlers.close();
     },
-    onError: showError,
+    onError: (e) => showError(e),
   });
 
   /* ------------------------------- Handlers ------------------------------- */
@@ -311,6 +311,28 @@ export default function ProcurementPage() {
     return { ...form, lines: [{ ...first, ...patch }, ...rest] };
   };
 
+  /*
+   * A supplier's bid, gathered from where the quotes actually live.
+   *
+   * This screen had been reading rfq.quotations, which does not exist: quotes
+   * hang off each RFQ line, and a supplier may answer several of them. So the
+   * "quotes received" column always read zero and the award control never
+   * appeared. A bid is the quoted rate times that line's quantity, summed
+   * over every line the supplier answered, cheapest first.
+   */
+  const bidsOf = (rfq) => {
+    const bySupplier = new Map();
+    for (const line of rfq.lines || []) {
+      for (const q of line.quotes || []) {
+        const id = String(q.supplier?._id || q.supplier);
+        const bid = bySupplier.get(id) || { id, name: q.supplierName, total: 0 };
+        bid.total += (Number(q.rate) || 0) * (Number(line.qty) || 0);
+        bySupplier.set(id, bid);
+      }
+    }
+    return [...bySupplier.values()].sort((a, b) => a.total - b.total);
+  };
+
   const openQuoteModal = (rfq) => {
     setSelectedRfq(rfq);
     setQuoteForm({
@@ -356,30 +378,30 @@ export default function ProcurementPage() {
       {/* STATS OVERVIEW */}
       <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md" mb="lg">
         <StatCard
-          title="Open Purchase Orders"
+          label="Open purchase orders"
           value={posData?.summary?.open || 0}
-          subtext="Approved & awaiting delivery"
+          sub="Approved and awaiting delivery"
           icon={IconTruckDelivery}
-          color="amber"
+          color="biscuit"
         />
         <StatCard
-          title="Awaiting Approval"
+          label="Awaiting approval"
           value={posData?.summary?.awaitingApproval || 0}
-          subtext="Escalated to management"
+          sub="Escalated to management"
           icon={IconClock}
           color="blue"
         />
         <StatCard
-          title="Total PO Value"
+          label="Total PO value"
           value={money(posData?.summary?.value || 0)}
-          subtext="Total committed spend"
+          sub="Total committed spend"
           icon={IconShoppingCart}
-          color="emerald"
+          color="teal"
         />
         <StatCard
-          title="Goods Receipts (GRNs)"
+          label="Goods receipts (GRNs)"
           value={grns.length}
-          subtext="Posted stock receipts"
+          sub="Posted stock receipts"
           icon={IconPackageImport}
           color="teal"
         />
@@ -454,7 +476,7 @@ export default function ProcurementPage() {
                               <Button
                                 size="xs"
                                 variant="light"
-                                color="amber"
+                                color="biscuit"
                                 onClick={() => submitPoMutation.mutate(po._id)}
                               >
                                 Submit
@@ -464,7 +486,7 @@ export default function ProcurementPage() {
                             {po.status === 'PENDING_APPROVAL' && can('po.approve') && (
                               <Button
                                 size="xs"
-                                color="emerald"
+                                color="teal"
                                 onClick={() => approvePoMutation.mutate(po._id)}
                               >
                                 Approve
@@ -528,21 +550,29 @@ export default function ProcurementPage() {
                       <Table.Td>
                         <StatusBadge status={rfq.status} />
                       </Table.Td>
-                      <Table.Td>{rfq.quotations?.length || 0} quotes</Table.Td>
+                      <Table.Td>
+                        {bidsOf(rfq).length} {bidsOf(rfq).length === 1 ? 'quote' : 'quotes'}
+                      </Table.Td>
                       <Table.Td ta="right">
                         <Group gap={6} justify="flex-end">
-                          {rfq.status === 'PUBLISHED' && (
+                          {/*
+                            An RFQ is OPEN while it is collecting bids - there
+                            is no PUBLISHED state in the schema, so gating on
+                            one hid both of these controls permanently.
+                          */}
+                          {rfq.status === 'OPEN' && can('rfq.manage') && (
                             <>
                               <Button size="xs" variant="light" onClick={() => openQuoteModal(rfq)}>
                                 Record Quote
                               </Button>
-                              {rfq.quotations?.length > 0 && (
+                              {bidsOf(rfq).length > 0 && (
                                 <Select
                                   placeholder="Award supplier"
                                   size="xs"
-                                  data={rfq.quotations.map((q) => ({
-                                    value: q.supplier?._id || q.supplier,
-                                    label: `Award: ${q.supplierName} (${money(q.totalAmount)})`,
+                                  w={230}
+                                  data={bidsOf(rfq).map((b) => ({
+                                    value: b.id,
+                                    label: `Award: ${b.name} (${money(b.total)})`,
                                   }))}
                                   onChange={(val) => val && awardRfqMutation.mutate({ id: rfq._id, supplier: val })}
                                 />
